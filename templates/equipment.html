@@ -1,0 +1,32 @@
+{% include "frame_top.html" %}
+<style>
+    .die-face-light { fill: #ffffff; stroke: #6b7280; stroke-width: 1.2; }
+    .die-pip-light { fill: #18181b; }
+    .die-face-dark { fill: #1c1c1e; stroke: #6b7280; stroke-width: 1.2; }
+    .die-pip-dark { fill: #fafafa; }
+    .die { display: inline-flex; filter: drop-shadow(0 1px 1.5px rgba(0,0,0,0.4)); }
+    .eq-row { border: 1px solid var(--color-base-300); border-radius: 0.5rem;
+              background: var(--color-base-100); padding: 0.6rem 0.85rem; }
+</style>
+
+<div class="container mx-auto p-4 max-w-4xl">
+    <h1 class="text-3xl font-bold mb-4">Equipment</h1>
+
+    <div class="flex flex-col gap-2">
+        {% for row in equipment_rows %}
+        <div class="eq-row flex items-center gap-3 flex-wrap">
+            <button class="btn btn-sm btn-primary" phx-click="equipment_roll" phx-value-key="{{row.key}}">Roll</button>
+            <span id="{{row.d1_id}}" class="die" phx-hook="DieSpin" data-v="{{row.d1_v}}">{{row.d1_svg}}</span>
+            <span id="{{row.d2_id}}" class="die" phx-hook="DieSpin" data-v="{{row.d2_v}}">{{row.d2_svg}}</span>
+            <div class="min-w-0">
+                <span class="font-semibold">{{row.title}}</span>
+                {% if row.result %}<span class="text-base-content/50"> — </span><span>{{row.result}}</span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% if not equipment_rows %}
+        <div class="text-base-content/50 italic">No equipment lists found in trophy/lists/.</div>
+        {% endif %}
+    </div>
+</div>
+{% include "frame_bottom.html" %}

@@ -1,0 +1,16 @@
+[project]
+name = "trophy"
+version = "0.1.0"
+description = "Trophy Gold character sheets on the alive framework"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "alive",
+    "asgiref>=3.11.1",
+    "django>=6.0.2",
+    "markdown>=3.7",
+    "uvicorn>=0.40.0",
+]
+
+[tool.uv.sources]
+alive = { path = "../alive", editable = true }

@@ -1,0 +1,329 @@
+{% include "frame_top.html" %}
+<style>
+    .field-label { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+                   color: var(--color-base-content); opacity: 0.55; font-weight: 600; }
+    .line-input { background: transparent; }
+    /* One consistent text size across every editable control + rendered note */
+    .sheet-card input, .sheet-card textarea, .note-box { font-size: 0.85rem; }
+    .note-box { min-height: 1.5rem; border: 1px solid var(--color-base-300);
+                border-radius: 0.375rem; padding: 0.5rem 0.55rem; cursor: text; }
+    .sheet-card textarea { resize: none; overflow: hidden; }
+    .sheet-card { border: 1px solid var(--color-base-300); border-radius: 0.5rem;
+                  background: var(--color-base-100); padding: 0.85rem;
+                  break-inside: avoid; margin-bottom: 0.85rem; }
+    /* list rows */
+    .list-row { display: flex; align-items: stretch; gap: 0.25rem; }
+    .burden-bar { width: 4px; border-radius: 2px; background: transparent; flex: none; }
+    .burden-bar.on { background: var(--color-base-content); }
+    .row-input { flex: 1 1 auto; min-width: 0; background: transparent;
+                 border: none; border-bottom: 1px solid var(--color-base-300);
+                 padding: 0.15rem 0.25rem; font-size: 0.85rem; }
+    .row-input:focus { outline: none; border-bottom-color: var(--color-primary); }
+    /* ruin track */
+    .ruin-box { width: 2rem; height: 2rem; display: flex; align-items: center;
+                justify-content: center; font-size: 1rem; font-weight: 600;
+                border: 1px solid var(--color-base-content); border-radius: 0.25rem;
+                cursor: pointer; }
+    .ruin-box.on { background: var(--color-base-content); color: var(--color-base-100); }
+    /* ammo boxes */
+    .box-btn { width: 1.15rem; height: 1.15rem; border: 1px solid var(--color-base-content);
+               border-radius: 0.2rem; cursor: pointer; flex: none; }
+    .box-btn.on { background: var(--color-base-content); }
+</style>
+
+<div class="container mx-auto p-4 max-w-6xl">
+
+{% if char_id %}
+    <div class="flex items-center justify-between mb-4">
+        <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; All characters</a>
+        <button id="delete-character-{{char_id}}" class="btn btn-ghost btn-sm text-error"
+                phx-click="delete_item" phx-value-item_id="{{char_id}}" phx-hook="ConfirmClick"
+                data-confirm="Delete this character?">Delete</button>
+    </div>
+
+    <div class="columns-1 md:columns-2 xl:columns-3 gap-4">
+
+        <div class="sheet-card">
+            <div class="flex gap-2 mb-2">
+                <div class="flex-1">
+                    <div class="field-label">Character Name</div>
+                    <input class="input input-sm input-bordered line-input w-full" value="{{char.name}}"
+                           name="value" phx-blur="save_field" phx-value-field="name" autocomplete="off" />
+                </div>
+                <div class="w-24">
+                    <div class="field-label">Gender</div>
+                    <input class="input input-sm input-bordered line-input w-full" value="{{char.gender}}"
+                           name="value" phx-blur="save_field" phx-value-field="gender" autocomplete="off" />
+                </div>
+            </div>
+            <div class="field-label">Player Name</div>
+            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.player_name}}"
+                   name="value" phx-blur="save_field" phx-value-field="player_name" autocomplete="off" />
+            <div class="field-label">Occupation</div>
+            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.occupation}}"
+                   name="value" phx-blur="save_field" phx-value-field="occupation" autocomplete="off" />
+            <div class="field-label">Background</div>
+            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.background}}"
+                   name="value" phx-blur="save_field" phx-value-field="background" autocomplete="off" />
+            <div class="flex items-center justify-between">
+                <div class="field-label">Look</div>
+                <button class="btn btn-ghost btn-xs px-1" phx-click="randomise_look"
+                        title="Randomise: pull three descriptors">
+                    <svg viewBox="0 0 40 40" class="w-4 h-4">
+                        <rect x="2" y="2" width="36" height="36" rx="6" fill="#ffffff" stroke="#6b7280" stroke-width="2"/>
+                        <circle cx="11" cy="11" r="3.6" fill="#18181b"/><circle cx="29" cy="11" r="3.6" fill="#18181b"/>
+                        <circle cx="11" cy="20" r="3.6" fill="#18181b"/><circle cx="29" cy="20" r="3.6" fill="#18181b"/>
+                        <circle cx="11" cy="29" r="3.6" fill="#18181b"/><circle cx="29" cy="29" r="3.6" fill="#18181b"/>
+                    </svg>
+                </button>
+            </div>
+            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.look}}"
+                   name="value" phx-blur="save_field" phx-value-field="look"
+                   placeholder="a few descriptive words" autocomplete="off" />
+            <div class="field-label">Drive</div>
+            {% if editing_field == "drive" %}
+            <div id="edit-drive" phx-hook="AutoFocus">
+                <textarea class="textarea textarea-bordered w-full" rows="2" name="value"
+                          phx-blur="save_field" phx-value-field="drive">{{char.drive}}</textarea>
+            </div>
+            {% else %}
+            <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="drive">
+                {% if char.drive_html %}{{char.drive_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sheet-card">
+            <div class="flex items-baseline justify-between mb-1">
+                <div class="field-label">Ruin</div>
+                <div class="field-label">Burdens</div>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex gap-1">
+                    {% for b in ruin_boxes %}
+                    <div class="ruin-box {% if b.on %}on{% endif %}"
+                         phx-click="set_ruin" phx-value-n="{{b.n}}">{{b.n}}</div>
+                    {% endfor %}
+                </div>
+                <div class="flex items-center gap-1">
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="adjust_burden"
+                            phx-value-delta="-1" title="Lower Burdens">&minus;</button>
+                    <div class="text-3xl font-bold w-8 text-center">{{burden}}</div>
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="adjust_burden"
+                            phx-value-delta="1" title="Raise Burdens">+</button>
+                </div>
+            </div>
+            <div class="inline-grid grid-cols-[auto_auto] gap-x-3 gap-y-2 items-center mt-3">
+                <span class="field-label">Coin</span>
+                <input type="number" min="0" value="{{char.coin}}"
+                       class="input input-sm input-bordered w-20 text-right" name="value"
+                       phx-blur="save_field" phx-value-field="coin" />
+                <span class="field-label">Hunt Tokens</span>
+                <input type="number" min="0" value="{{char.hunt_tokens}}"
+                       class="input input-sm input-bordered w-20 text-right" name="value"
+                       phx-blur="save_field" phx-value-field="hunt_tokens" />
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Skills</div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for s in skills %}
+                <div class="list-row">
+                    <div class="burden-bar {% if s.over_free %}on{% endif %}"></div>
+                    <input class="row-input" value="{{s.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="skill" phx-value-id="{{s.id}}" autocomplete="off" />
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
+                            phx-value-kind="skill" phx-value-id="{{s.id}}" title="Remove">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            <form phx-submit="add_skill" class="mt-2">
+                <input class="input input-xs input-bordered w-full" name="name"
+                       placeholder="+ add skill" autocomplete="off" />
+            </form>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Powers</div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for r in powers %}
+                <div class="list-row">
+                    <div class="burden-bar {% if r.over_free %}on{% endif %}"></div>
+                    <input class="row-input" value="{{r.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="power" phx-value-id="{{r.id}}" autocomplete="off" />
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
+                            phx-value-kind="power" phx-value-id="{{r.id}}" title="Remove">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            <form phx-submit="add_power" class="mt-2">
+                <input class="input input-xs input-bordered w-full" name="name"
+                       placeholder="+ add power" autocomplete="off" />
+            </form>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Conditions</div>
+            {% if editing_field == "conditions" %}
+            <div id="edit-conditions" phx-hook="AutoFocus">
+                <textarea class="textarea textarea-bordered w-full" rows="2" name="value"
+                          phx-blur="save_field" phx-value-field="conditions">{{char.conditions}}</textarea>
+            </div>
+            {% else %}
+            <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="conditions">
+                {% if char.conditions_html %}{{char.conditions_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Hoard</div>
+            <div class="flex items-center gap-2 mt-1">
+                <input type="number" min="0" max="{{hoard_max}}" value="{{char.hoard}}"
+                       class="input input-sm input-bordered w-20 text-right" name="value"
+                       phx-blur="save_field" phx-value-field="hoard" />
+                <span class="opacity-60 text-sm">/ {{hoard_max}}</span>
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Household</div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for h in household %}
+                <div class="list-row">
+                    <div class="burden-bar on"></div>
+                    <input class="row-input" value="{{h.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="household" phx-value-id="{{h.id}}" autocomplete="off" />
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
+                            phx-value-kind="household" phx-value-id="{{h.id}}" title="Remove">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            <form phx-submit="add_household" class="mt-2">
+                <input class="input input-xs input-bordered w-full" name="name"
+                       placeholder="+ add detail" autocomplete="off" />
+            </form>
+        </div>
+
+        <div class="sheet-card">
+            <div class="flex items-center justify-between">
+                <div class="field-label">Backpack Equipment</div>
+                <div class="field-label">Uses</div>
+            </div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for b in backpack %}
+                <div class="list-row items-center">
+                    <input class="row-input" value="{{b.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="backpack" phx-value-id="{{b.id}}" autocomplete="off" />
+                    <div class="flex items-center gap-1 flex-none">
+                        <button class="btn btn-ghost btn-xs px-1" phx-click="adjust_uses"
+                                phx-value-id="{{b.id}}" phx-value-delta="-1">&minus;</button>
+                        <span class="w-6 text-center text-sm">{{b.uses}}</span>
+                        <button class="btn btn-ghost btn-xs px-1" phx-click="adjust_uses"
+                                phx-value-id="{{b.id}}" phx-value-delta="1">+</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Combat Equipment</div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for c in combat %}
+                <div class="list-row items-center">
+                    <div class="burden-bar on"></div>
+                    <input class="row-input" value="{{c.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="combat" phx-value-id="{{c.id}}" autocomplete="off" />
+                    <div class="flex items-center gap-1 flex-none">
+                        {% if c.has_ammo %}
+                        <span class="text-[0.6rem] opacity-50 mr-1">ammo</span>
+                        {% for a in c.ammo_boxes %}
+                        <div class="box-btn {% if a.on %}on{% endif %}" phx-click="set_ammo"
+                             phx-value-id="{{c.id}}" phx-value-n="{{a.n}}"></div>
+                        {% endfor %}
+                        {% else %}
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-xs" {% if c.marked %}checked{% endif %}
+                                   phx-click="toggle_marked" phx-value-id="{{c.id}}" />
+                            Marked
+                        </label>
+                        {% endif %}
+                        <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
+                                phx-value-kind="combat" phx-value-id="{{c.id}}" title="Remove">&times;</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <form phx-submit="add_combat" class="flex gap-1 mt-2">
+                <select name="kind" class="select select-xs select-bordered w-28">
+                    <option value="item">Item</option>
+                    <option value="ammo">With ammo</option>
+                </select>
+                <input class="input input-xs input-bordered flex-1" name="name"
+                       placeholder="+ add combat equipment" autocomplete="off" />
+            </form>
+        </div>
+
+        <div class="sheet-card">
+            <div class="field-label">Found Equipment</div>
+            <div class="flex flex-col gap-1 mt-1">
+                {% for f in found %}
+                <div class="list-row">
+                    <input class="row-input" value="{{f.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="found" phx-value-id="{{f.id}}" autocomplete="off" />
+                    <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
+                            phx-value-kind="found" phx-value-id="{{f.id}}" title="Remove">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            <form phx-submit="add_found" class="mt-2">
+                <input class="input input-xs input-bordered w-full" name="name"
+                       placeholder="+ add found equipment" autocomplete="off" />
+            </form>
+        </div>
+
+    </div>
+
+    <div class="sheet-card mt-1">
+        <div class="field-label">Notes</div>
+        {% if editing_field == "notes" %}
+        <div id="edit-notes" phx-hook="AutoFocus">
+            <textarea class="textarea textarea-bordered w-full" rows="3" name="value"
+                      phx-blur="save_field" phx-value-field="notes">{{char.notes}}</textarea>
+        </div>
+        {% else %}
+        <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="notes">
+            {% if char.notes_html %}{{char.notes_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+{% else %}
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Trophy Characters</h1>
+        <button class="btn btn-primary" phx-click="new_character">+ New Character</button>
+    </div>
+
+    {% if character_list %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for c in character_list %}
+        <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
+             class="card bg-base-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer">
+            <div class="card-body p-4">
+                <h2 class="card-title text-base">{{c.label}}</h2>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-base-content/50">
+        <p class="text-lg">No characters yet.</p>
+        <p class="text-sm mt-2">Create a new character to get started.</p>
+    </div>
+    {% endif %}
+{% endif %}
+
+</div>
+{% include "frame_bottom.html" %}
