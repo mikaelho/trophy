@@ -12,6 +12,7 @@ class TrophyContext(ModelContext):
     char: dict = field(default_factory=dict)
     char_id: int | None = None
     character_list: list[dict] = field(default_factory=list)
+    hireling_list: list[dict] = field(default_factory=list)
 
     powers: list[dict] = field(default_factory=list)
     skills: list[dict] = field(default_factory=list)
@@ -38,3 +39,6 @@ class TrophyContext(ModelContext):
     # Equipment tables page
     equipment_rows: list[dict] = field(default_factory=list)
     equipment_rolls: dict = field(default_factory=dict)
+
+    # Bestiary page
+    monsters: list[dict] = field(default_factory=list)

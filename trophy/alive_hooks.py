@@ -100,6 +100,7 @@ def _fetch_sheet(pk):
         "hoard": ch.hoard,
         "coin": ch.coin,
         "hunt_tokens": ch.hunt_tokens,
+        "hireling": ch.hireling,
     }
 
     return {
@@ -133,14 +134,15 @@ def _fetch_sheet(pk):
 
 @sync_to_async(thread_sensitive=False)
 def _fetch_character_list():
+    """Return (player_characters, hirelings) as two label lists."""
     Character = apps.get_model('trophy', 'Character')
-    result = []
+    players, hirelings = [], []
     for ch in Character.objects.all():
         name = ch.name.strip() or "Unnamed character"
         occ = ch.occupation.strip()
-        label = f"{name} ({occ})" if occ else name
-        result.append({"id": ch.id, "label": label})
-    return result
+        item = {"id": ch.id, "label": f"{name} ({occ})" if occ else name}
+        (hirelings if ch.hireling else players).append(item)
+    return players, hirelings
 
 
 async def _load_sheet(socket):
@@ -152,13 +154,13 @@ async def _load_sheet(socket):
     if not pk:
         ctx.char = {}
         ctx.char_id = None
-        ctx.character_list = await _fetch_character_list()
+        ctx.character_list, ctx.hireling_list = await _fetch_character_list()
         return
     data = await _fetch_sheet(int(pk))
     if data is None:
         ctx.char = {}
         ctx.char_id = None
-        ctx.character_list = await _fetch_character_list()
+        ctx.character_list, ctx.hireling_list = await _fetch_character_list()
         return
     for key, value in data.items():
         setattr(ctx, key, value)
@@ -279,6 +281,15 @@ def _adjust_burden(pk, delta):
 
 
 @sync_to_async(thread_sensitive=False)
+def _toggle_hireling(pk):
+    Character = apps.get_model('trophy', 'Character')
+    ch = Character.objects.filter(pk=pk).first()
+    if ch:
+        ch.hireling = not ch.hireling
+        ch.save(update_fields=["hireling"])
+
+
+@sync_to_async(thread_sensitive=False)
 def _create_blank_character():
     Character = apps.get_model('trophy', 'Character')
     BackpackItem = apps.get_model('trophy', 'BackpackItem')
@@ -298,6 +309,13 @@ async def trophy_event_handler(event, payload, socket):
     if event == "randomise_look":
         if pk and _DESCRIPTORS:
             await _append_look(int(pk), _random_descriptor())
+            await _sync(socket)
+        return True
+
+    # Toggle whether this character is a Hireling.
+    if event == "toggle_hireling":
+        if pk:
+            await _toggle_hireling(int(pk))
             await _sync(socket)
         return True
 
@@ -823,6 +841,119 @@ async def equipment_load_hook(socket, *args):
 
 
 # ==========================================================================
+# Bestiary (shared, party-wide list of monster boxes)
+# ==========================================================================
+
+from .models import HABIT_COUNT
+
+BESTIARY_TEXT_FIELDS = {"name", "description", "defences", "weakness"}
+
+
+@sync_to_async(thread_sensitive=False)
+def _fetch_monsters():
+    Monster = apps.get_model('trophy', 'Monster')
+    out = []
+    for m in Monster.objects.order_by("-position", "-id"):   # newest first
+        habits = list(m.habits or [])
+        habits = (habits + [""] * HABIT_COUNT)[:HABIT_COUNT]
+        out.append({
+            "id": m.id,
+            "endurance": m.endurance,
+            "name": m.name,
+            "description": m.description,
+            "defences": m.defences,
+            "weakness": m.weakness,
+            "habits": [
+                {"n": i + 1, "text": habits[i], "svg": render_die("light", i + 1)}
+                for i in range(HABIT_COUNT)
+            ],
+        })
+    return out
+
+
+async def _load_bestiary(socket):
+    socket.context.monsters = await _fetch_monsters()
+
+
+async def _bestiary_sync(socket):
+    await _refresh(socket)
+    Monster = apps.get_model('trophy', 'Monster')
+    await socket.broadcast(get_store(Monster).channel, {"action": "state_changed"})
+
+
+@sync_to_async(thread_sensitive=False)
+def _bestiary_add():
+    Monster = apps.get_model('trophy', 'Monster')
+    last = Monster.objects.order_by("-position").first()
+    pos = (last.position + 1) if last else 0
+    Monster.objects.create(position=pos, habits=[""] * HABIT_COUNT)
+
+
+@sync_to_async(thread_sensitive=False)
+def _bestiary_remove(mid):
+    apps.get_model('trophy', 'Monster').objects.filter(pk=mid).delete()
+
+
+@sync_to_async(thread_sensitive=False)
+def _bestiary_save(mid, field, value):
+    apps.get_model('trophy', 'Monster').objects.filter(pk=mid).update(**{field: value})
+
+
+@sync_to_async(thread_sensitive=False)
+def _bestiary_save_habit(mid, n, value):
+    Monster = apps.get_model('trophy', 'Monster')
+    m = Monster.objects.filter(pk=mid).first()
+    if not m:
+        return
+    habits = list(m.habits or [])
+    habits = (habits + [""] * HABIT_COUNT)[:HABIT_COUNT]
+    habits[n - 1] = value
+    m.habits = habits
+    m.save(update_fields=["habits"])
+
+
+async def bestiary_event_handler(event, payload, socket):
+    if event == "bestiary_add":
+        await _bestiary_add()
+        await _bestiary_sync(socket)
+        return True
+
+    if event == "bestiary_remove":
+        mid = _int(_val(payload, "id"))
+        if mid:
+            await _bestiary_remove(mid)
+            await _bestiary_sync(socket)
+        return True
+
+    if event == "bestiary_save":
+        mid = _int(_val(payload, "id"))
+        field = _val(payload, "field")
+        value = _val(payload, "value")
+        if mid and field in BESTIARY_TEXT_FIELDS:
+            await _bestiary_save(mid, field, value.strip() if isinstance(value, str) else value)
+            await _bestiary_sync(socket)
+        elif mid and field == "endurance":
+            await _bestiary_save(mid, "endurance", max(0, _int(value)))
+            await _bestiary_sync(socket)
+        return True
+
+    if event == "bestiary_save_habit":
+        mid = _int(_val(payload, "id"))
+        n = _int(_val(payload, "n"))
+        value = _val(payload, "value")
+        if mid and 1 <= n <= HABIT_COUNT:
+            await _bestiary_save_habit(mid, n, value.strip() if isinstance(value, str) else value)
+            await _bestiary_sync(socket)
+        return True
+
+    return False
+
+
+async def bestiary_load_hook(socket, *args):
+    await _load_bestiary(socket)
+
+
+# ==========================================================================
 
 
 def register_hooks():
@@ -846,6 +977,10 @@ def register_hooks():
             conf.event_handler = equipment_event_handler
             conf.params_hook = equipment_load_hook
             conf.refresh_hook = equipment_load_hook
+        elif model.__name__ == "Monster":
+            conf.event_handler = bestiary_event_handler
+            conf.params_hook = bestiary_load_hook
+            conf.refresh_hook = bestiary_load_hook
         else:
             conf.event_handler = trophy_event_handler
             conf.mount_hook = trophy_mount_hook

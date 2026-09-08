@@ -36,9 +36,16 @@
 {% if char_id %}
     <div class="flex items-center justify-between mb-4">
         <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; All characters</a>
-        <button id="delete-character-{{char_id}}" class="btn btn-ghost btn-sm text-error"
-                phx-click="delete_item" phx-value-item_id="{{char_id}}" phx-hook="ConfirmClick"
-                data-confirm="Delete this character?">Delete</button>
+        <div class="flex items-center gap-3">
+            <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="checkbox checkbox-sm" {% if char.hireling %}checked{% endif %}
+                       phx-click="toggle_hireling" />
+                Hireling
+            </label>
+            <button id="delete-character-{{char_id}}" class="btn btn-ghost btn-sm text-error"
+                    phx-click="delete_item" phx-value-item_id="{{char_id}}" phx-hook="ConfirmClick"
+                    data-confirm="Delete this character?">Delete</button>
+        </div>
     </div>
 
     <div class="columns-1 md:columns-2 xl:columns-3 gap-4">
@@ -126,7 +133,10 @@
         </div>
 
         <div class="sheet-card">
-            <div class="field-label">Skills</div>
+            <div class="flex items-baseline justify-between">
+                <div class="field-label">Skills</div>
+                <div class="text-[0.6rem] opacity-50">{{free_skills}} free</div>
+            </div>
             <div class="flex flex-col gap-1 mt-1">
                 {% for s in skills %}
                 <div class="list-row">
@@ -145,7 +155,10 @@
         </div>
 
         <div class="sheet-card">
-            <div class="field-label">Powers</div>
+            <div class="flex items-baseline justify-between">
+                <div class="field-label">Powers</div>
+                <div class="text-[0.6rem] opacity-50">{{free_powers}} free/Ruin for all</div>
+            </div>
             <div class="flex flex-col gap-1 mt-1">
                 {% for r in powers %}
                 <div class="list-row">
@@ -188,7 +201,10 @@
         </div>
 
         <div class="sheet-card">
-            <div class="field-label">Household</div>
+            <div class="flex items-baseline justify-between">
+                <div class="field-label">Household</div>
+                <div class="text-[0.6rem] opacity-50">0 free</div>
+            </div>
             <div class="flex flex-col gap-1 mt-1">
                 {% for h in household %}
                 <div class="list-row">
@@ -229,7 +245,10 @@
         </div>
 
         <div class="sheet-card">
-            <div class="field-label">Combat Equipment</div>
+            <div class="flex items-baseline justify-between">
+                <div class="field-label">Combat Equipment</div>
+                <div class="text-[0.6rem] opacity-50">0 free</div>
+            </div>
             <div class="flex flex-col gap-1 mt-1">
                 {% for c in combat %}
                 <div class="list-row items-center">
@@ -306,7 +325,7 @@
         <button class="btn btn-primary" phx-click="new_character">+ New Character</button>
     </div>
 
-    {% if character_list %}
+    {% if character_list or hireling_list %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for c in character_list %}
         <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
@@ -317,6 +336,20 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if hireling_list %}
+    <h2 class="text-sm uppercase tracking-wide font-semibold text-base-content/60 mt-8 mb-3">Hirelings</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for c in hireling_list %}
+        <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
+             class="card bg-base-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer">
+            <div class="card-body p-4">
+                <h2 class="card-title text-base">{{c.label}}</h2>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% else %}
     <div class="text-center py-12 text-base-content/50">
         <p class="text-lg">No characters yet.</p>

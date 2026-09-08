@@ -51,6 +51,8 @@ class Character(models.Model, AliveMixin):
     hunt_tokens = models.PositiveIntegerField(default=0)
     burden_offset = models.IntegerField(default=0)   # manual +/- on top of the derived Burden
 
+    hireling = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -118,6 +120,36 @@ class Equipment(models.Model, AliveMixin):
 
     def __str__(self):
         return "Equipment"
+
+
+HABIT_COUNT = 6         # a monster's Habits are a d6 table (1-6)
+
+
+class Monster(models.Model, AliveMixin):
+    """A shared, party-wide bestiary entry (one box on the Trophy bestiary sheet)."""
+
+    alive = AliveConf(
+        fields=("id",),
+        list_fields=("id",),
+        template="bestiary.html",
+    )
+
+    endurance = models.PositiveSmallIntegerField(default=0)
+    name = models.CharField(max_length=200, blank=True)
+    description = models.CharField(max_length=400, blank=True)
+    habits = models.JSONField(default=list, blank=True)   # up to 6 strings (d6 1-6)
+    defences = models.TextField(blank=True)
+    weakness = models.CharField(max_length=300, blank=True)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        verbose_name = "monster"
+        verbose_name_plural = "Bestiary"
+
+    def __str__(self):
+        return self.name or "Monster"
 
 
 class Power(models.Model):
