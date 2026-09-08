@@ -1024,19 +1024,19 @@ def _fetch_overview():
     rows = []
     for label, fn in _OVERVIEW_FIELDS:
         rows.append({
-            "label": label,
+            "label": label, "md": False,
             "player_values": [scalar(fn, ch) for ch in players],
             "hireling_values": [scalar(fn, ch) for ch in hirelings],
         })
     for label, fn in _OVERVIEW_LIST_FIELDS:
         rows.append({
-            "label": label,
+            "label": label, "md": False,
             "player_values": [_ul(fn(ch)) for ch in players],
             "hireling_values": [_ul(fn(ch)) for ch in hirelings],
         })
     for label, attr in _OVERVIEW_MD_FIELDS:
         rows.append({
-            "label": label,
+            "label": label, "md": True,
             "player_values": [md(attr, ch) for ch in players],
             "hireling_values": [md(attr, ch) for ch in hirelings],
         })
