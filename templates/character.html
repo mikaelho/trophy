@@ -42,6 +42,11 @@
                        phx-click="toggle_hireling" />
                 Hireling
             </label>
+            <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="checkbox checkbox-sm" {% if char.archived %}checked{% endif %}
+                       phx-click="toggle_archived" />
+                Archived
+            </label>
             <button id="delete-character-{{char_id}}" class="btn btn-ghost btn-sm text-error"
                     phx-click="delete_item" phx-value-item_id="{{char_id}}" phx-hook="ConfirmClick"
                     data-confirm="Delete this character?">Delete</button>
@@ -328,7 +333,7 @@
         </div>
     </div>
 
-    {% if character_list or hireling_list %}
+    {% if character_list or hireling_list or archived_list %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for c in character_list %}
         <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
@@ -344,6 +349,20 @@
     <h2 class="text-sm uppercase tracking-wide font-semibold text-base-content/60 mt-8 mb-3">Hirelings</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for c in hireling_list %}
+        <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
+             class="card bg-base-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer">
+            <div class="card-body p-4">
+                <h2 class="card-title text-base">{{c.label}}</h2>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if archived_list %}
+    <h2 class="text-sm uppercase tracking-wide font-semibold text-base-content/60 mt-8 mb-3">Archived</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
+        {% for c in archived_list %}
         <div phx-click="grid_navigate" phx-value-id="{{c.id}}"
              class="card bg-base-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer">
             <div class="card-body p-4">

@@ -52,6 +52,7 @@ class Character(models.Model, AliveMixin):
     burden_offset = models.IntegerField(default=0)   # manual +/- on top of the derived Burden
 
     hireling = models.BooleanField(default=False)
+    archived = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

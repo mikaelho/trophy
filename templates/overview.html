@@ -49,7 +49,7 @@
         <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; Characters</a>
     </div>
 
-    {% if overview_players or overview_hirelings %}
+    {% if overview_players or overview_hirelings or overview_archived %}
     <div class="ov-wrap">
         <table class="ov">
             <thead>
@@ -61,12 +61,18 @@
                     {% if overview_hirelings %}
                     <th class="ov-group ov-divider" colspan="{{overview_hireling_count}}">Hirelings</th>
                     {% endif %}
+                    {% if overview_archived %}
+                    <th class="ov-group ov-divider" colspan="{{overview_archived_count}}">Archived</th>
+                    {% endif %}
                 </tr>
                 <tr class="ov-names">
                     {% for c in overview_players %}
                     <th class="ov-name"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
                     {% endfor %}
                     {% for c in overview_hirelings %}
+                    <th class="ov-name {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    {% endfor %}
+                    {% for c in overview_archived %}
                     <th class="ov-name {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
                     {% endfor %}
                 </tr>
@@ -79,6 +85,9 @@
                     <td>{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
                     {% endfor %}
                     {% for v in row.hireling_values %}
+                    <td class="{% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
+                    {% endfor %}
+                    {% for v in row.archived_values %}
                     <td class="{% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
                     {% endfor %}
                 </tr>

@@ -13,6 +13,7 @@ class TrophyContext(ModelContext):
     char_id: int | None = None
     character_list: list[dict] = field(default_factory=list)
     hireling_list: list[dict] = field(default_factory=list)
+    archived_list: list[dict] = field(default_factory=list)
 
     powers: list[dict] = field(default_factory=list)
     skills: list[dict] = field(default_factory=list)
@@ -46,6 +47,8 @@ class TrophyContext(ModelContext):
     # Character overview table
     overview_players: list[dict] = field(default_factory=list)
     overview_hirelings: list[dict] = field(default_factory=list)
+    overview_archived: list[dict] = field(default_factory=list)
     overview_rows: list[dict] = field(default_factory=list)
     overview_player_count: int = 0
     overview_hireling_count: int = 0
+    overview_archived_count: int = 0

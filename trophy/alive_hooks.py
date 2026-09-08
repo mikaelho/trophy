@@ -101,6 +101,7 @@ def _fetch_sheet(pk):
         "coin": ch.coin,
         "hunt_tokens": ch.hunt_tokens,
         "hireling": ch.hireling,
+        "archived": ch.archived,
     }
 
     return {
@@ -134,15 +135,16 @@ def _fetch_sheet(pk):
 
 @sync_to_async(thread_sensitive=False)
 def _fetch_character_list():
-    """Return (player_characters, hirelings) as two label lists."""
+    """Return (player_characters, hirelings, archived) as three label lists."""
     Character = apps.get_model('trophy', 'Character')
-    players, hirelings = [], []
+    players, hirelings, archived = [], [], []
     for ch in Character.objects.all():
         name = ch.name.strip() or "Unnamed character"
         occ = ch.occupation.strip()
         item = {"id": ch.id, "label": f"{name} ({occ})" if occ else name}
-        (hirelings if ch.hireling else players).append(item)
-    return players, hirelings
+        bucket = archived if ch.archived else (hirelings if ch.hireling else players)
+        bucket.append(item)
+    return players, hirelings, archived
 
 
 async def _load_sheet(socket):
@@ -154,13 +156,13 @@ async def _load_sheet(socket):
     if not pk:
         ctx.char = {}
         ctx.char_id = None
-        ctx.character_list, ctx.hireling_list = await _fetch_character_list()
+        ctx.character_list, ctx.hireling_list, ctx.archived_list = await _fetch_character_list()
         return
     data = await _fetch_sheet(int(pk))
     if data is None:
         ctx.char = {}
         ctx.char_id = None
-        ctx.character_list, ctx.hireling_list = await _fetch_character_list()
+        ctx.character_list, ctx.hireling_list, ctx.archived_list = await _fetch_character_list()
         return
     for key, value in data.items():
         setattr(ctx, key, value)
@@ -290,6 +292,15 @@ def _toggle_hireling(pk):
 
 
 @sync_to_async(thread_sensitive=False)
+def _toggle_archived(pk):
+    Character = apps.get_model('trophy', 'Character')
+    ch = Character.objects.filter(pk=pk).first()
+    if ch:
+        ch.archived = not ch.archived
+        ch.save(update_fields=["archived"])
+
+
+@sync_to_async(thread_sensitive=False)
 def _create_blank_character():
     Character = apps.get_model('trophy', 'Character')
     BackpackItem = apps.get_model('trophy', 'BackpackItem')
@@ -316,6 +327,13 @@ async def trophy_event_handler(event, payload, socket):
     if event == "toggle_hireling":
         if pk:
             await _toggle_hireling(int(pk))
+            await _sync(socket)
+        return True
+
+    # Toggle whether this character is Archived.
+    if event == "toggle_archived":
+        if pk:
+            await _toggle_archived(int(pk))
             await _sync(socket)
         return True
 
@@ -1009,9 +1027,10 @@ _OVERVIEW_MD_FIELDS = [("Drive", "drive"), ("Conditions", "conditions"), ("Notes
 @sync_to_async(thread_sensitive=False)
 def _fetch_overview():
     Character = apps.get_model('trophy', 'Character')
-    players, hirelings = [], []
+    players, hirelings, archived = [], [], []
     for ch in Character.objects.all():
-        (hirelings if ch.hireling else players).append(ch)
+        bucket = archived if ch.archived else (hirelings if ch.hireling else players)
+        bucket.append(ch)
 
     def scalar(fn, ch):
         v = str(fn(ch)).strip()
@@ -1027,25 +1046,30 @@ def _fetch_overview():
             "label": label, "md": False,
             "player_values": [scalar(fn, ch) for ch in players],
             "hireling_values": [scalar(fn, ch) for ch in hirelings],
+            "archived_values": [scalar(fn, ch) for ch in archived],
         })
     for label, fn in _OVERVIEW_LIST_FIELDS:
         rows.append({
             "label": label, "md": False,
             "player_values": [_ul(fn(ch)) for ch in players],
             "hireling_values": [_ul(fn(ch)) for ch in hirelings],
+            "archived_values": [_ul(fn(ch)) for ch in archived],
         })
     for label, attr in _OVERVIEW_MD_FIELDS:
         rows.append({
             "label": label, "md": True,
             "player_values": [md(attr, ch) for ch in players],
             "hireling_values": [md(attr, ch) for ch in hirelings],
+            "archived_values": [md(attr, ch) for ch in archived],
         })
     return {
         "overview_players": [_overview_col(ch) for ch in players],
         "overview_hirelings": [_overview_col(ch) for ch in hirelings],
+        "overview_archived": [_overview_col(ch) for ch in archived],
         "overview_rows": rows,
         "overview_player_count": len(players),
         "overview_hireling_count": len(hirelings),
+        "overview_archived_count": len(archived),
     }
 
 
