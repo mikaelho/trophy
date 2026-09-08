@@ -206,15 +206,15 @@ class HouseholdMember(models.Model):
 
 
 class CombatItem(models.Model):
-    ITEM = "item"
-    AMMO = "ammo"
-    KIND_CHOICES = [(ITEM, "Item"), (AMMO, "With ammo")]
+    WEAPON = "weapon"
+    ARMOR = "armor"
+    KIND_CHOICES = [(WEAPON, "Weapon"), (ARMOR, "Armour")]
 
     character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="combat")
     name = models.CharField(max_length=200, blank=True)
-    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default=ITEM)
-    marked = models.BooleanField(default=False)             # item: marked when it soaks a hit
-    ammo = models.PositiveSmallIntegerField(default=0)      # with-ammo: 0..AMMO_MAX
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default=ARMOR)
+    marked = models.BooleanField(default=False)             # armour: marked when it soaks a hit
+    ammo = models.PositiveSmallIntegerField(default=0)      # weapon: 0..AMMO_MAX
     position = models.PositiveIntegerField(default=0)
 
     class Meta:

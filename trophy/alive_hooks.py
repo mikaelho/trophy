@@ -113,7 +113,7 @@ def _fetch_sheet(pk):
         "combat": [
             {
                 "id": c.id, "name": c.name, "kind": c.kind,
-                "has_ammo": c.kind == "ammo",
+                "has_ammo": c.kind == "weapon",
                 "marked": c.marked, "ammo": c.ammo,
                 "ammo_boxes": [{"n": n, "on": n <= c.ammo} for n in range(1, AMMO_MAX + 1)],
             }
@@ -373,7 +373,7 @@ async def trophy_event_handler(event, payload, socket):
             extra = None
             if kind == "combat":
                 requested = _val(payload, "kind")
-                extra = {"kind": requested if requested in ("item", "ammo") else "item"}
+                extra = {"kind": requested if requested in ("armor", "weapon") else "armor"}
             await _add_child(int(pk), kind, name, extra)
             if kind == "power":             # each power raises Ruin by 1
                 await _bump_ruin(int(pk), 1)
