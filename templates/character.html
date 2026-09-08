@@ -29,6 +29,9 @@
     .box-btn { width: 1.15rem; height: 1.15rem; border: 1px solid var(--color-base-content);
                border-radius: 0.2rem; cursor: pointer; flex: none; }
     .box-btn.on { background: var(--color-base-content); }
+    /* a field being edited by another user (hard lock): dimmed + warning ring */
+    .locked-field { outline: 2px solid var(--color-warning); outline-offset: -1px;
+                    opacity: 0.6; cursor: not-allowed; border-radius: 0.25rem; }
 </style>
 
 <div class="container mx-auto p-4 max-w-6xl">
@@ -59,24 +62,34 @@
             <div class="flex gap-2 mb-2">
                 <div class="flex-1">
                     <div class="field-label">Character Name</div>
-                    <input class="input input-sm input-bordered line-input w-full" value="{{char.name}}"
-                           name="value" phx-blur="save_field" phx-value-field="name" autocomplete="off" />
+                    <input class="input input-sm input-bordered line-input w-full {% if char.name_locked %}locked-field{% endif %}" value="{{char.name}}"
+                           name="value" phx-blur="save_field" phx-value-field="name"
+                           phx-focus="lock_field" phx-value-key="name" autocomplete="off"
+                           {% if char.name_locked %}disabled title="Someone is editing this"{% endif %} />
                 </div>
                 <div class="w-24">
                     <div class="field-label">Gender</div>
-                    <input class="input input-sm input-bordered line-input w-full" value="{{char.gender}}"
-                           name="value" phx-blur="save_field" phx-value-field="gender" autocomplete="off" />
+                    <input class="input input-sm input-bordered line-input w-full {% if char.gender_locked %}locked-field{% endif %}" value="{{char.gender}}"
+                           name="value" phx-blur="save_field" phx-value-field="gender"
+                           phx-focus="lock_field" phx-value-key="gender" autocomplete="off"
+                           {% if char.gender_locked %}disabled title="Someone is editing this"{% endif %} />
                 </div>
             </div>
             <div class="field-label">Player Name</div>
-            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.player_name}}"
-                   name="value" phx-blur="save_field" phx-value-field="player_name" autocomplete="off" />
+            <input class="input input-sm input-bordered line-input w-full mb-2 {% if char.player_name_locked %}locked-field{% endif %}" value="{{char.player_name}}"
+                   name="value" phx-blur="save_field" phx-value-field="player_name"
+                   phx-focus="lock_field" phx-value-key="player_name" autocomplete="off"
+                   {% if char.player_name_locked %}disabled title="Someone is editing this"{% endif %} />
             <div class="field-label">Occupation</div>
-            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.occupation}}"
-                   name="value" phx-blur="save_field" phx-value-field="occupation" autocomplete="off" />
+            <input class="input input-sm input-bordered line-input w-full mb-2 {% if char.occupation_locked %}locked-field{% endif %}" value="{{char.occupation}}"
+                   name="value" phx-blur="save_field" phx-value-field="occupation"
+                   phx-focus="lock_field" phx-value-key="occupation" autocomplete="off"
+                   {% if char.occupation_locked %}disabled title="Someone is editing this"{% endif %} />
             <div class="field-label">Background</div>
-            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.background}}"
-                   name="value" phx-blur="save_field" phx-value-field="background" autocomplete="off" />
+            <input class="input input-sm input-bordered line-input w-full mb-2 {% if char.background_locked %}locked-field{% endif %}" value="{{char.background}}"
+                   name="value" phx-blur="save_field" phx-value-field="background"
+                   phx-focus="lock_field" phx-value-key="background" autocomplete="off"
+                   {% if char.background_locked %}disabled title="Someone is editing this"{% endif %} />
             <div class="flex items-center justify-between">
                 <div class="field-label">Look</div>
                 <button class="btn btn-ghost btn-xs px-1" phx-click="randomise_look"
@@ -89,9 +102,11 @@
                     </svg>
                 </button>
             </div>
-            <input class="input input-sm input-bordered line-input w-full mb-2" value="{{char.look}}"
+            <input class="input input-sm input-bordered line-input w-full mb-2 {% if char.look_locked %}locked-field{% endif %}" value="{{char.look}}"
                    name="value" phx-blur="save_field" phx-value-field="look"
-                   placeholder="a few descriptive words" autocomplete="off" />
+                   phx-focus="lock_field" phx-value-key="look"
+                   placeholder="a few descriptive words" autocomplete="off"
+                   {% if char.look_locked %}disabled title="Someone is editing this"{% endif %} />
             <div class="field-label">Drive</div>
             {% if editing_field == "drive" %}
             <div id="edit-drive" phx-hook="AutoFocus">
@@ -99,9 +114,8 @@
                           phx-blur="save_field" phx-value-field="drive">{{char.drive}}</textarea>
             </div>
             {% else %}
-            <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="drive">
-                {% if char.drive_html %}{{char.drive_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
-            </div>
+            <div class="note-box prose prose-sm max-w-none {% if char.drive_locked %}locked-field{% endif %}"
+                 {% if char.drive_locked %}title="Someone is editing this"{% else %}phx-click="edit_field" phx-value-field="drive"{% endif %}>{{char.drive_display}}</div>
             {% endif %}
         </div>
 
@@ -128,12 +142,16 @@
             <div class="inline-grid grid-cols-[auto_auto] gap-x-3 gap-y-2 items-center mt-3">
                 <span class="field-label">Coin</span>
                 <input type="number" min="0" value="{{char.coin}}"
-                       class="input input-sm input-bordered w-20 text-right" name="value"
-                       phx-blur="save_field" phx-value-field="coin" />
+                       class="input input-sm input-bordered w-20 text-right {% if char.coin_locked %}locked-field{% endif %}" name="value"
+                       phx-blur="save_field" phx-value-field="coin"
+                       phx-focus="lock_field" phx-value-key="coin"
+                       {% if char.coin_locked %}disabled title="Someone is editing this"{% endif %} />
                 <span class="field-label">Hunt Tokens</span>
                 <input type="number" min="0" value="{{char.hunt_tokens}}"
-                       class="input input-sm input-bordered w-20 text-right" name="value"
-                       phx-blur="save_field" phx-value-field="hunt_tokens" />
+                       class="input input-sm input-bordered w-20 text-right {% if char.hunt_tokens_locked %}locked-field{% endif %}" name="value"
+                       phx-blur="save_field" phx-value-field="hunt_tokens"
+                       phx-focus="lock_field" phx-value-key="hunt_tokens"
+                       {% if char.hunt_tokens_locked %}disabled title="Someone is editing this"{% endif %} />
             </div>
         </div>
 
@@ -146,8 +164,10 @@
                 {% for s in skills %}
                 <div class="list-row">
                     <div class="burden-bar {% if s.over_free %}on{% endif %}"></div>
-                    <input class="row-input" value="{{s.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="skill" phx-value-id="{{s.id}}" autocomplete="off" />
+                    <input class="row-input {% if s.locked %}locked-field{% endif %}" value="{{s.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="skill" phx-value-id="{{s.id}}"
+                           phx-focus="lock_field" phx-value-key="skill:{{s.id}}" autocomplete="off"
+                           {% if s.locked %}disabled title="Someone is editing this"{% endif %} />
                     <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
                             phx-value-kind="skill" phx-value-id="{{s.id}}" title="Remove">&times;</button>
                 </div>
@@ -168,8 +188,10 @@
                 {% for r in powers %}
                 <div class="list-row">
                     <div class="burden-bar {% if r.over_free %}on{% endif %}"></div>
-                    <input class="row-input" value="{{r.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="power" phx-value-id="{{r.id}}" autocomplete="off" />
+                    <input class="row-input {% if r.locked %}locked-field{% endif %}" value="{{r.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="power" phx-value-id="{{r.id}}"
+                           phx-focus="lock_field" phx-value-key="power:{{r.id}}" autocomplete="off"
+                           {% if r.locked %}disabled title="Someone is editing this"{% endif %} />
                     <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
                             phx-value-kind="power" phx-value-id="{{r.id}}" title="Remove">&times;</button>
                 </div>
@@ -189,9 +211,8 @@
                           phx-blur="save_field" phx-value-field="conditions">{{char.conditions}}</textarea>
             </div>
             {% else %}
-            <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="conditions">
-                {% if char.conditions_html %}{{char.conditions_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
-            </div>
+            <div class="note-box prose prose-sm max-w-none {% if char.conditions_locked %}locked-field{% endif %}"
+                 {% if char.conditions_locked %}title="Someone is editing this"{% else %}phx-click="edit_field" phx-value-field="conditions"{% endif %}>{{char.conditions_display}}</div>
             {% endif %}
         </div>
 
@@ -199,8 +220,10 @@
             <div class="field-label">Hoard</div>
             <div class="flex items-center gap-2 mt-1">
                 <input type="number" min="0" max="{{hoard_max}}" value="{{char.hoard}}"
-                       class="input input-sm input-bordered w-20 text-right" name="value"
-                       phx-blur="save_field" phx-value-field="hoard" />
+                       class="input input-sm input-bordered w-20 text-right {% if char.hoard_locked %}locked-field{% endif %}" name="value"
+                       phx-blur="save_field" phx-value-field="hoard"
+                       phx-focus="lock_field" phx-value-key="hoard"
+                       {% if char.hoard_locked %}disabled title="Someone is editing this"{% endif %} />
                 <span class="opacity-60 text-sm">/ {{hoard_max}}</span>
             </div>
         </div>
@@ -214,8 +237,10 @@
                 {% for h in household %}
                 <div class="list-row">
                     <div class="burden-bar on"></div>
-                    <input class="row-input" value="{{h.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="household" phx-value-id="{{h.id}}" autocomplete="off" />
+                    <input class="row-input {% if h.locked %}locked-field{% endif %}" value="{{h.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="household" phx-value-id="{{h.id}}"
+                           phx-focus="lock_field" phx-value-key="household:{{h.id}}" autocomplete="off"
+                           {% if h.locked %}disabled title="Someone is editing this"{% endif %} />
                     <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
                             phx-value-kind="household" phx-value-id="{{h.id}}" title="Remove">&times;</button>
                 </div>
@@ -235,8 +260,10 @@
             <div class="flex flex-col gap-1 mt-1">
                 {% for b in backpack %}
                 <div class="list-row items-center">
-                    <input class="row-input" value="{{b.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="backpack" phx-value-id="{{b.id}}" autocomplete="off" />
+                    <input class="row-input {% if b.locked %}locked-field{% endif %}" value="{{b.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="backpack" phx-value-id="{{b.id}}"
+                           phx-focus="lock_field" phx-value-key="backpack:{{b.id}}" autocomplete="off"
+                           {% if b.locked %}disabled title="Someone is editing this"{% endif %} />
                     <div class="flex items-center gap-1 flex-none">
                         <button class="btn btn-ghost btn-xs px-1" phx-click="adjust_uses"
                                 phx-value-id="{{b.id}}" phx-value-delta="-1">&minus;</button>
@@ -258,8 +285,10 @@
                 {% for c in combat %}
                 <div class="list-row items-center">
                     <div class="burden-bar on"></div>
-                    <input class="row-input" value="{{c.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="combat" phx-value-id="{{c.id}}" autocomplete="off" />
+                    <input class="row-input {% if c.locked %}locked-field{% endif %}" value="{{c.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="combat" phx-value-id="{{c.id}}"
+                           phx-focus="lock_field" phx-value-key="combat:{{c.id}}" autocomplete="off"
+                           {% if c.locked %}disabled title="Someone is editing this"{% endif %} />
                     <div class="flex items-center gap-1 flex-none">
                         {% if c.has_ammo %}
                         <span class="text-[0.6rem] opacity-50 mr-1">ammo</span>
@@ -295,8 +324,10 @@
             <div class="flex flex-col gap-1 mt-1">
                 {% for f in found %}
                 <div class="list-row">
-                    <input class="row-input" value="{{f.name}}" name="value" phx-blur="rename_child"
-                           phx-value-kind="found" phx-value-id="{{f.id}}" autocomplete="off" />
+                    <input class="row-input {% if f.locked %}locked-field{% endif %}" value="{{f.name}}" name="value" phx-blur="rename_child"
+                           phx-value-kind="found" phx-value-id="{{f.id}}"
+                           phx-focus="lock_field" phx-value-key="found:{{f.id}}" autocomplete="off"
+                           {% if f.locked %}disabled title="Someone is editing this"{% endif %} />
                     <button class="btn btn-ghost btn-xs px-1" phx-click="remove_child"
                             phx-value-kind="found" phx-value-id="{{f.id}}" title="Remove">&times;</button>
                 </div>
@@ -318,9 +349,8 @@
                       phx-blur="save_field" phx-value-field="notes">{{char.notes}}</textarea>
         </div>
         {% else %}
-        <div class="note-box prose prose-sm max-w-none" phx-click="edit_field" phx-value-field="notes">
-            {% if char.notes_html %}{{char.notes_html}}{% else %}<span class="opacity-40 italic">click to edit</span>{% endif %}
-        </div>
+        <div class="note-box prose prose-sm max-w-none {% if char.notes_locked %}locked-field{% endif %}"
+             {% if char.notes_locked %}title="Someone is editing this"{% else %}phx-click="edit_field" phx-value-field="notes"{% endif %}>{{char.notes_display}}</div>
         {% endif %}
     </div>
 

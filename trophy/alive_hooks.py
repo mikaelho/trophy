@@ -15,7 +15,7 @@ from django.apps import apps
 from markupsafe import Markup, escape
 
 from alive.components.editable_field import render_markdown_safe
-from alive.store import get_store
+from alive.store import get_store, acquire_lock, release_lock, get_lock_holder
 
 from .context import TrophyContext
 from .models import (
@@ -43,6 +43,43 @@ TEXT_FIELDS = {
     "drive", "conditions", "notes",
 }
 INT_FIELDS = {"hoard", "coin", "hunt_tokens"}
+
+# Placeholder shown for an empty markdown field (precomputed so the template
+# needs no nested {% if %} inside a branch -- nested conditionals confuse the
+# LiveView diff when a branch flips, rendering "undefined").
+_CLICK_TO_EDIT = Markup('<span class="opacity-40 italic">click to edit</span>')
+
+
+# --- edit locks -----------------------------------------------------------
+# While a user has a field focused it holds an in-memory lock, so other viewers
+# see that field as being edited (read-only + highlighted). Every lock for a
+# sheet is namespaced under the Character model channel (item_id = char pk) so a
+# single subscription and alive's disconnect cleanup cover the whole sheet;
+# child-list rows use the key "<kind>:<row id>".
+
+def _char_lock_label():
+    return get_store(apps.get_model('trophy', 'Character')).model_label
+
+
+def _apply_locks(data, char_id, sid):
+    """Annotate the sheet dict with per-field ``*_locked`` / ``locked`` flags
+    for anything currently held by another session."""
+    label = _char_lock_label()
+    cid = str(char_id)
+
+    def held_by_other(key):
+        holder = get_lock_holder(label, cid, key)
+        return holder is not None and holder != sid
+
+    char = data["char"]
+    for f in TEXT_FIELDS | INT_FIELDS:
+        char[f + "_locked"] = held_by_other(f)
+
+    for list_key, kind in (("skills", "skill"), ("powers", "power"),
+                           ("household", "household"), ("backpack", "backpack"),
+                           ("combat", "combat"), ("found", "found")):
+        for it in data[list_key]:
+            it["locked"] = held_by_other(f"{kind}:{it['id']}")
 
 
 def _val(payload, key, default=""):
@@ -92,11 +129,11 @@ def _fetch_sheet(pk):
         "background": ch.background,
         "look": ch.look,
         "drive": ch.drive,
-        "drive_html": render_markdown_safe(ch.drive) if ch.drive else "",
+        "drive_display": render_markdown_safe(ch.drive) if ch.drive else _CLICK_TO_EDIT,
         "conditions": ch.conditions,
-        "conditions_html": render_markdown_safe(ch.conditions) if ch.conditions else "",
+        "conditions_display": render_markdown_safe(ch.conditions) if ch.conditions else _CLICK_TO_EDIT,
         "notes": ch.notes,
-        "notes_html": render_markdown_safe(ch.notes) if ch.notes else "",
+        "notes_display": render_markdown_safe(ch.notes) if ch.notes else _CLICK_TO_EDIT,
         "hoard": ch.hoard,
         "coin": ch.coin,
         "hunt_tokens": ch.hunt_tokens,
@@ -164,6 +201,7 @@ async def _load_sheet(socket):
         ctx.char_id = None
         ctx.character_list, ctx.hireling_list, ctx.archived_list = await _fetch_character_list()
         return
+    _apply_locks(data, int(pk), ctx.session_id)
     for key, value in data.items():
         setattr(ctx, key, value)
 
@@ -343,6 +381,15 @@ async def trophy_event_handler(event, payload, socket):
         await socket.push_navigate("/alive/character/", {"detail": new_id})
         return True
 
+    # Take the edit lock when a field gains focus, so other viewers see it as
+    # being edited (read-only + highlighted). Released on blur below.
+    if event == "lock_field":
+        key = _val(payload, "key")
+        if pk and key:
+            acquire_lock(_char_lock_label(), str(pk), key, ctx.session_id)
+            await _sync(socket)
+        return True
+
     # Scalar field save (one-line inputs + markdown textareas on blur)
     if event == "save_field":
         field = _val(payload, "field")
@@ -354,17 +401,26 @@ async def trophy_event_handler(event, payload, socket):
             if field == "hoard":
                 n = min(n, HOARD_MAX)
             await _save_scalar(int(pk), field, n)
+        if pk and field:
+            release_lock(_char_lock_label(), str(pk), field, ctx.session_id)
         ctx.editing_field = ""
         await _sync(socket)
         return True
 
-    # Click a markdown block to start editing it
+    # Click a markdown block to start editing it (only if no one else holds it)
     if event == "edit_field":
-        ctx.editing_field = _val(payload, "field")
+        field = _val(payload, "field")
+        if pk and field and acquire_lock(_char_lock_label(), str(pk), field, ctx.session_id):
+            ctx.editing_field = field
+            await _sync(socket)
         return True
 
     if event == "stop_edit":
+        field = ctx.editing_field
+        if pk and field:
+            release_lock(_char_lock_label(), str(pk), field, ctx.session_id)
         ctx.editing_field = ""
+        await _sync(socket)
         return True
 
     # Burdens: manual +/- on top of the derived value
@@ -403,6 +459,8 @@ async def trophy_event_handler(event, payload, socket):
         item_id = _int(_val(payload, "id"))
         if kind in CHILD_MODELS and item_id:
             await _rename_child(kind, item_id, _val(payload, "value").strip())
+            if pk:
+                release_lock(_char_lock_label(), str(pk), f"{kind}:{item_id}", ctx.session_id)
             await _sync(socket)
         return True
 
@@ -889,8 +947,25 @@ def _fetch_monsters():
     return out
 
 
+def _monster_lock_label():
+    return get_store(apps.get_model('trophy', 'Monster')).model_label
+
+
 async def _load_bestiary(socket):
-    socket.context.monsters = await _fetch_monsters()
+    monsters = await _fetch_monsters()
+    sid = socket.context.session_id
+    label = _monster_lock_label()
+
+    def held_by_other(mid, key):
+        holder = get_lock_holder(label, str(mid), key)
+        return holder is not None and holder != sid
+
+    for m in monsters:
+        for f in BESTIARY_TEXT_FIELDS | {"endurance"}:
+            m[f + "_locked"] = held_by_other(m["id"], f)
+        for h in m["habits"]:
+            h["locked"] = held_by_other(m["id"], f"habit:{h['n']}")
+    socket.context.monsters = monsters
 
 
 async def _bestiary_sync(socket):
@@ -943,16 +1018,26 @@ async def bestiary_event_handler(event, payload, socket):
             await _bestiary_sync(socket)
         return True
 
+    # Take the edit lock when a monster field gains focus; released on blur.
+    if event == "bestiary_lock":
+        mid = _int(_val(payload, "id"))
+        key = _val(payload, "key")
+        if mid and key:
+            acquire_lock(_monster_lock_label(), str(mid), key, socket.context.session_id)
+            await _bestiary_sync(socket)
+        return True
+
     if event == "bestiary_save":
         mid = _int(_val(payload, "id"))
         field = _val(payload, "field")
         value = _val(payload, "value")
         if mid and field in BESTIARY_TEXT_FIELDS:
             await _bestiary_save(mid, field, value.strip() if isinstance(value, str) else value)
-            await _bestiary_sync(socket)
         elif mid and field == "endurance":
             await _bestiary_save(mid, "endurance", max(0, _int(value)))
-            await _bestiary_sync(socket)
+        if mid and field:
+            release_lock(_monster_lock_label(), str(mid), field, socket.context.session_id)
+        await _bestiary_sync(socket)
         return True
 
     if event == "bestiary_save_habit":
@@ -961,6 +1046,7 @@ async def bestiary_event_handler(event, payload, socket):
         value = _val(payload, "value")
         if mid and 1 <= n <= HABIT_COUNT:
             await _bestiary_save_habit(mid, n, value.strip() if isinstance(value, str) else value)
+            release_lock(_monster_lock_label(), str(mid), f"habit:{n}", socket.context.session_id)
             await _bestiary_sync(socket)
         return True
 
