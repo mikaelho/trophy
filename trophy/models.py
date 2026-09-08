@@ -152,6 +152,23 @@ class Monster(models.Model, AliveMixin):
         return self.name or "Monster"
 
 
+class Overview(models.Model, AliveMixin):
+    """Routeless singleton: a read-only, live table comparing all characters."""
+
+    alive = AliveConf(
+        fields=("id",),
+        list_fields=("id",),
+        template="overview.html",
+    )
+
+    class Meta:
+        verbose_name = "overview"
+        verbose_name_plural = "Overview"
+
+    def __str__(self):
+        return "Overview"
+
+
 class Power(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="powers")
     name = models.CharField(max_length=200, blank=True)

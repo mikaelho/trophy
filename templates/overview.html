@@ -1,0 +1,77 @@
+{% include "frame_top.html" %}
+<style>
+    .ov-wrap { overflow: auto; max-height: calc(100vh - 8rem);
+               border: 1px solid var(--color-base-300); border-radius: 0.5rem; }
+    table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
+    .ov th, .ov td { border-right: 1px solid var(--color-base-300);
+                     border-bottom: 1px solid var(--color-base-300);
+                     padding: 0.3rem 0.6rem; text-align: left; vertical-align: top; }
+    .ov td, .ov th.ov-name { min-width: 9rem; max-width: 18rem;
+                             white-space: normal; overflow-wrap: anywhere; }
+    /* group header row (Characters / Hirelings) */
+    .ov-group { position: sticky; top: 0; z-index: 4; height: 1.9rem;
+                background: var(--color-base-200); font-weight: 700; text-align: center; }
+    /* character-name header row */
+    .ov-names th { position: sticky; top: 1.9rem; z-index: 4;
+                   background: var(--color-base-200); font-weight: 600; }
+    /* first (field-label) column */
+    .ov-rowhead { position: sticky; left: 0; z-index: 3; background: var(--color-base-100);
+                  font-weight: 600; white-space: nowrap; }
+    /* top-left corner, sticky both ways */
+    .ov-corner { position: sticky; top: 0; left: 0; z-index: 5;
+                 background: var(--color-base-200); }
+    /* divider before the Hirelings section */
+    .ov-divider { border-left: 3px solid var(--color-base-content); }
+    .ov td .prose { font-size: 0.85rem; }
+    .ov-list { list-style: disc; margin: 0; padding-left: 1.1rem; }
+    .ov-list li { white-space: normal; }
+</style>
+
+<div class="container mx-auto p-4 max-w-full">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-3xl font-bold">Overview</h1>
+        <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; Characters</a>
+    </div>
+
+    {% if overview_players or overview_hirelings %}
+    <div class="ov-wrap">
+        <table class="ov">
+            <thead>
+                <tr>
+                    <th class="ov-corner" rowspan="2">Field</th>
+                    {% if overview_players %}
+                    <th class="ov-group" colspan="{{overview_player_count}}">Characters</th>
+                    {% endif %}
+                    {% if overview_hirelings %}
+                    <th class="ov-group ov-divider" colspan="{{overview_hireling_count}}">Hirelings</th>
+                    {% endif %}
+                </tr>
+                <tr class="ov-names">
+                    {% for c in overview_players %}
+                    <th class="ov-name"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    {% endfor %}
+                    {% for c in overview_hirelings %}
+                    <th class="ov-name {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in overview_rows %}
+                <tr>
+                    <th class="ov-rowhead">{{row.label}}</th>
+                    {% for v in row.player_values %}
+                    <td>{{v}}</td>
+                    {% endfor %}
+                    {% for v in row.hireling_values %}
+                    <td class="{% if loop.is_first %}ov-divider{% endif %}">{{v}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-base-content/50 italic">No characters yet.</div>
+    {% endif %}
+</div>
+{% include "frame_bottom.html" %}

@@ -12,7 +12,7 @@ from random import randint, choice
 
 from asgiref.sync import sync_to_async
 from django.apps import apps
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from alive.components.editable_field import render_markdown_safe
 from alive.store import get_store
@@ -954,6 +954,124 @@ async def bestiary_load_hook(socket, *args):
 
 
 # ==========================================================================
+# Character overview (read-only, live table comparing all characters)
+# ==========================================================================
+
+def _overview_col(ch):
+    return {"id": ch.id, "name": ch.name.strip() or "Unnamed"}
+
+
+def _names(items):
+    return [x.name.strip() for x in items if x.name.strip()]
+
+
+def _backpack_items(ch):
+    out = []
+    for b in ch.backpack.all():
+        if b.name.strip():
+            out.append(f"{b.name} ({b.uses})" if b.uses else b.name)
+    return out
+
+
+def _ul(items):
+    """Render a list of strings as a <ul>, or an em dash when empty."""
+    if not items:
+        return "—"
+    lis = "".join(f"<li>{escape(i)}</li>" for i in items)
+    return Markup(f'<ul class="ov-list">{lis}</ul>')
+
+
+# (label, value function) for plain scalar rows
+_OVERVIEW_FIELDS = [
+    ("Player", lambda ch: ch.player_name),
+    ("Gender", lambda ch: ch.gender),
+    ("Occupation", lambda ch: ch.occupation),
+    ("Background", lambda ch: ch.background),
+    ("Look", lambda ch: ch.look),
+    ("Ruin", lambda ch: ch.ruin),
+    ("Burden", lambda ch: ch.burden),
+    ("Hoard", lambda ch: f"{ch.hoard} / {HOARD_MAX}"),
+    ("Coin", lambda ch: ch.coin),
+    ("Hunt Tokens", lambda ch: ch.hunt_tokens),
+]
+# (label, items function) for rows rendered as a bulleted list
+_OVERVIEW_LIST_FIELDS = [
+    ("Skills", lambda ch: _names(ch.skills.all())),
+    ("Powers", lambda ch: _names(ch.powers.all())),
+    ("Combat", lambda ch: _names(ch.combat.all())),
+    ("Backpack", lambda ch: _backpack_items(ch)),
+    ("Household", lambda ch: _names(ch.household.all())),
+    ("Found", lambda ch: _names(ch.found.all())),
+]
+_OVERVIEW_MD_FIELDS = [("Drive", "drive"), ("Conditions", "conditions"), ("Notes", "notes")]
+
+
+@sync_to_async(thread_sensitive=False)
+def _fetch_overview():
+    Character = apps.get_model('trophy', 'Character')
+    players, hirelings = [], []
+    for ch in Character.objects.all():
+        (hirelings if ch.hireling else players).append(ch)
+
+    def scalar(fn, ch):
+        v = str(fn(ch)).strip()
+        return v if v else "—"
+
+    def md(attr, ch):
+        raw = getattr(ch, attr)
+        return render_markdown_safe(raw) if raw and raw.strip() else "—"
+
+    rows = []
+    for label, fn in _OVERVIEW_FIELDS:
+        rows.append({
+            "label": label,
+            "player_values": [scalar(fn, ch) for ch in players],
+            "hireling_values": [scalar(fn, ch) for ch in hirelings],
+        })
+    for label, fn in _OVERVIEW_LIST_FIELDS:
+        rows.append({
+            "label": label,
+            "player_values": [_ul(fn(ch)) for ch in players],
+            "hireling_values": [_ul(fn(ch)) for ch in hirelings],
+        })
+    for label, attr in _OVERVIEW_MD_FIELDS:
+        rows.append({
+            "label": label,
+            "player_values": [md(attr, ch) for ch in players],
+            "hireling_values": [md(attr, ch) for ch in hirelings],
+        })
+    return {
+        "overview_players": [_overview_col(ch) for ch in players],
+        "overview_hirelings": [_overview_col(ch) for ch in hirelings],
+        "overview_rows": rows,
+        "overview_player_count": len(players),
+        "overview_hireling_count": len(hirelings),
+    }
+
+
+async def _load_overview(socket):
+    data = await _fetch_overview()
+    for key, value in data.items():
+        setattr(socket.context, key, value)
+
+
+async def overview_load_hook(socket, *args):
+    await _load_overview(socket)
+
+
+async def overview_extra_subscriptions(socket):
+    # React live to any character change (saves broadcast on the Character channel).
+    Character = apps.get_model('trophy', 'Character')
+    return [get_store(Character).channel]
+
+
+async def overview_info_hook(event, socket):
+    Character = apps.get_model('trophy', 'Character')
+    if event.name == get_store(Character).channel:
+        await socket.liveview._refresh_view_async(socket)
+
+
+# ==========================================================================
 
 
 def register_hooks():
@@ -981,6 +1099,11 @@ def register_hooks():
             conf.event_handler = bestiary_event_handler
             conf.params_hook = bestiary_load_hook
             conf.refresh_hook = bestiary_load_hook
+        elif model.__name__ == "Overview":
+            conf.params_hook = overview_load_hook
+            conf.refresh_hook = overview_load_hook
+            conf.extra_subscriptions = overview_extra_subscriptions
+            conf.info_hook = overview_info_hook
         else:
             conf.event_handler = trophy_event_handler
             conf.mount_hook = trophy_mount_hook

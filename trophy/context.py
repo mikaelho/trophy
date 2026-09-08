@@ -42,3 +42,10 @@ class TrophyContext(ModelContext):
 
     # Bestiary page
     monsters: list[dict] = field(default_factory=list)
+
+    # Character overview table
+    overview_players: list[dict] = field(default_factory=list)
+    overview_hirelings: list[dict] = field(default_factory=list)
+    overview_rows: list[dict] = field(default_factory=list)
+    overview_player_count: int = 0
+    overview_hireling_count: int = 0

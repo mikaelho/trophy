@@ -159,9 +159,24 @@ def custom_root_template(context: RootTemplateContext) -> str:
           }}
         }});
 
+        window.Hooks = window.Hooks || {{}};
+
+        // When a character sheet is opened from the Overview (URL carries the
+        // #from-overview fragment, which the server never sees), point its back
+        // link at the Overview instead of the character list.
+        window.Hooks.BackLink = {{
+          mounted() {{ this.apply(); }},
+          updated() {{ this.apply(); }},
+          apply() {{
+            if (window.location.hash === "#from-overview") {{
+              this.el.setAttribute("href", "/alive/overview/");
+              this.el.textContent = "← Overview";
+            }}
+          }},
+        }};
+
         // Spin a die on the mat whenever its value changes (i.e. on a roll),
         // the way cardplay's dice tumble.
-        window.Hooks = window.Hooks || {{}};
         window.Hooks.DieSpin = {{
           mounted() {{ this._v = this.el.dataset.v; }},
           updated() {{

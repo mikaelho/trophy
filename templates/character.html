@@ -35,7 +35,7 @@
 
 {% if char_id %}
     <div class="flex items-center justify-between mb-4">
-        <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; All characters</a>
+        <a id="sheet-back" phx-hook="BackLink" href="/alive/character/" class="btn btn-ghost btn-sm">&larr; All characters</a>
         <div class="flex items-center gap-3">
             <label class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="checkbox" class="checkbox checkbox-sm" {% if char.hireling %}checked{% endif %}
@@ -322,7 +322,10 @@
 {% else %}
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold">Trophy Characters</h1>
-        <button class="btn btn-primary" phx-click="new_character">+ New Character</button>
+        <div class="flex items-center gap-2">
+            <a href="/alive/overview/" class="btn btn-ghost">Overview</a>
+            <button class="btn btn-primary" phx-click="new_character">+ New Character</button>
+        </div>
     </div>
 
     {% if character_list or hireling_list %}
