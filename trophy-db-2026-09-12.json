@@ -1,0 +1,2544 @@
+[
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 3,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 3,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 3,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 3,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 2,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 2,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 2,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 2,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 4,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 4,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 4,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 4,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 5,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 5,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 5,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 5,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 6,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 6,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 6,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 6,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add character",
+    "content_type": 8,
+    "codename": "add_character"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change character",
+    "content_type": 8,
+    "codename": "change_character"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete character",
+    "content_type": 8,
+    "codename": "delete_character"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view character",
+    "content_type": 8,
+    "codename": "view_character"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add backpack item",
+    "content_type": 7,
+    "codename": "add_backpackitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change backpack item",
+    "content_type": 7,
+    "codename": "change_backpackitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete backpack item",
+    "content_type": 7,
+    "codename": "delete_backpackitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view backpack item",
+    "content_type": 7,
+    "codename": "view_backpackitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add combat item",
+    "content_type": 9,
+    "codename": "add_combatitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change combat item",
+    "content_type": 9,
+    "codename": "change_combatitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete combat item",
+    "content_type": 9,
+    "codename": "delete_combatitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view combat item",
+    "content_type": 9,
+    "codename": "view_combatitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add household member",
+    "content_type": 10,
+    "codename": "add_householdmember"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change household member",
+    "content_type": 10,
+    "codename": "change_householdmember"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete household member",
+    "content_type": 10,
+    "codename": "delete_householdmember"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view household member",
+    "content_type": 10,
+    "codename": "view_householdmember"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add power",
+    "content_type": 11,
+    "codename": "add_power"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change power",
+    "content_type": 11,
+    "codename": "change_power"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete power",
+    "content_type": 11,
+    "codename": "delete_power"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view power",
+    "content_type": 11,
+    "codename": "view_power"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add skill",
+    "content_type": 12,
+    "codename": "add_skill"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change skill",
+    "content_type": 12,
+    "codename": "change_skill"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete skill",
+    "content_type": 12,
+    "codename": "delete_skill"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view skill",
+    "content_type": 12,
+    "codename": "view_skill"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add found equipment",
+    "content_type": 13,
+    "codename": "add_foundequipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change found equipment",
+    "content_type": 13,
+    "codename": "change_foundequipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete found equipment",
+    "content_type": 13,
+    "codename": "delete_foundequipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view found equipment",
+    "content_type": 13,
+    "codename": "view_foundequipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 53,
+  "fields": {
+    "name": "Can add roller",
+    "content_type": 14,
+    "codename": "add_roller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 54,
+  "fields": {
+    "name": "Can change roller",
+    "content_type": 14,
+    "codename": "change_roller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 55,
+  "fields": {
+    "name": "Can delete roller",
+    "content_type": 14,
+    "codename": "delete_roller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 56,
+  "fields": {
+    "name": "Can view roller",
+    "content_type": 14,
+    "codename": "view_roller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 57,
+  "fields": {
+    "name": "Can add equipment",
+    "content_type": 15,
+    "codename": "add_equipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 58,
+  "fields": {
+    "name": "Can change equipment",
+    "content_type": 15,
+    "codename": "change_equipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 59,
+  "fields": {
+    "name": "Can delete equipment",
+    "content_type": 15,
+    "codename": "delete_equipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 60,
+  "fields": {
+    "name": "Can view equipment",
+    "content_type": 15,
+    "codename": "view_equipment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 61,
+  "fields": {
+    "name": "Can add monster",
+    "content_type": 16,
+    "codename": "add_monster"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 62,
+  "fields": {
+    "name": "Can change monster",
+    "content_type": 16,
+    "codename": "change_monster"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 63,
+  "fields": {
+    "name": "Can delete monster",
+    "content_type": 16,
+    "codename": "delete_monster"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 64,
+  "fields": {
+    "name": "Can view monster",
+    "content_type": 16,
+    "codename": "view_monster"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 65,
+  "fields": {
+    "name": "Can add overview",
+    "content_type": 17,
+    "codename": "add_overview"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 66,
+  "fields": {
+    "name": "Can change overview",
+    "content_type": 17,
+    "codename": "change_overview"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 67,
+  "fields": {
+    "name": "Can delete overview",
+    "content_type": 17,
+    "codename": "delete_overview"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 68,
+  "fields": {
+    "name": "Can view overview",
+    "content_type": 17,
+    "codename": "view_overview"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "auth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "trophy",
+    "model": "backpackitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "trophy",
+    "model": "character"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "trophy",
+    "model": "combatitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "trophy",
+    "model": "householdmember"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "trophy",
+    "model": "power"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "trophy",
+    "model": "skill"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "trophy",
+    "model": "foundequipment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "trophy",
+    "model": "roller"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "trophy",
+    "model": "equipment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 16,
+  "fields": {
+    "app_label": "trophy",
+    "model": "monster"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 17,
+  "fields": {
+    "app_label": "trophy",
+    "model": "overview"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 5,
+  "fields": {
+    "name": "Lora",
+    "gender": "Female",
+    "player_name": "Hireling",
+    "occupation": "Mercenary",
+    "background": "",
+    "look": "Clipped, precise, prowling",
+    "drive": "",
+    "conditions": "",
+    "notes": "",
+    "ruin": 4,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": true,
+    "archived": false,
+    "created_at": "2026-09-05T08:12:34.071Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 6,
+  "fields": {
+    "name": "Daian",
+    "gender": "Male",
+    "player_name": "Hireling",
+    "occupation": "Blacksmith",
+    "background": "",
+    "look": "",
+    "drive": "",
+    "conditions": "",
+    "notes": "",
+    "ruin": 2,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 2,
+    "hireling": true,
+    "archived": false,
+    "created_at": "2026-09-05T08:13:59.282Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 7,
+  "fields": {
+    "name": "Talia",
+    "gender": "Female",
+    "player_name": "Hireling",
+    "occupation": "Hearthwise",
+    "background": "",
+    "look": "Solid, popping, whiff of alcohol",
+    "drive": "",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 2,
+    "hireling": true,
+    "archived": false,
+    "created_at": "2026-09-05T08:36:39.727Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 8,
+  "fields": {
+    "name": "Tracksey",
+    "gender": "M",
+    "player_name": "Pasi",
+    "occupation": "Lockpick",
+    "background": "Liberated prisoner",
+    "look": "hoarse, utilitarian, loose",
+    "drive": "Commission a glorious statue of your deity, Saint Yadyck",
+    "conditions": "",
+    "notes": "Saint Yadyck of the Loam:\n\n- Her followers’ rich mulch is sprinkled across their fecund fields, but none will share in their silent harvest.\n- No one speaks the name Yadyck anymore",
+    "ruin": 2,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 1,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": false,
+    "created_at": "2026-09-06T15:35:01.231Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 9,
+  "fields": {
+    "name": "Vizzini",
+    "gender": "M",
+    "player_name": "Janne",
+    "occupation": "Lamb",
+    "background": "Reformed Thug",
+    "look": "short, bald, \"sicilian\"",
+    "drive": "Bribe the justiciars so they erase your crimes",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": false,
+    "created_at": "2026-09-06T15:59:59.878Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 10,
+  "fields": {
+    "name": "Evian",
+    "gender": "fe/male",
+    "player_name": "Julle",
+    "occupation": "Oracle",
+    "background": "Banished Dancer",
+    "look": "Uncertain, cryptic, feverish",
+    "drive": "Break the siege on your sibling’s fortress",
+    "conditions": "1. Avoiding bushes\n1. Servant of Malphast",
+    "notes": "- Tall, muscular, flowing blond hair, toga that reveals & hides in/appropriately\n- Fake ritual is REALLY convincing to the rest of the party-",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": false,
+    "created_at": "2026-09-06T16:00:06.870Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 11,
+  "fields": {
+    "name": "Inda",
+    "gender": "",
+    "player_name": "",
+    "occupation": "Herbalist",
+    "background": "Failed Pilgrim",
+    "look": "",
+    "drive": "Buy the orphanage where you were mistreated",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": true,
+    "created_at": "2026-09-12T17:13:09.520Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 12,
+  "fields": {
+    "name": "Foret",
+    "gender": "",
+    "player_name": "",
+    "occupation": "Guide",
+    "background": "Escaped Cultist",
+    "look": "",
+    "drive": "Finance an expedition into the Blossoming Sea",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": true,
+    "created_at": "2026-09-12T17:13:09.529Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 13,
+  "fields": {
+    "name": "Obeha",
+    "gender": "",
+    "player_name": "",
+    "occupation": "Nest",
+    "background": "Lured Innocent",
+    "look": "",
+    "drive": "Become part of the Swirling Court",
+    "conditions": "",
+    "notes": "",
+    "ruin": 2,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": true,
+    "created_at": "2026-09-12T17:13:09.538Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 14,
+  "fields": {
+    "name": "Benah",
+    "gender": "",
+    "player_name": "",
+    "occupation": "Bodyguard",
+    "background": "Devoted Widow",
+    "look": "",
+    "drive": "Pay your father's debt to Bright-Teeth Assyrio",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": true,
+    "created_at": "2026-09-12T17:13:09.545Z"
+  }
+},
+{
+  "model": "trophy.character",
+  "pk": 15,
+  "fields": {
+    "name": "Otso",
+    "gender": "",
+    "player_name": "",
+    "occupation": "Ox",
+    "background": "Oppressed Laborer",
+    "look": "",
+    "drive": "Take Cyrus's place at the Earthen Council",
+    "conditions": "",
+    "notes": "",
+    "ruin": 3,
+    "hoard": 0,
+    "coin": 0,
+    "hunt_tokens": 0,
+    "burden_offset": 0,
+    "hireling": false,
+    "archived": true,
+    "created_at": "2026-09-12T17:13:09.553Z"
+  }
+},
+{
+  "model": "trophy.roller",
+  "pk": 1,
+  "fields": {
+    "mat": [
+      {
+        "id": "dee7f35f",
+        "color": "light",
+        "value": 6
+      },
+      {
+        "id": "e539b40b",
+        "color": "light",
+        "value": 6
+      }
+    ],
+    "sections": [],
+    "updated_at": "2026-09-06T18:41:03.217Z"
+  }
+},
+{
+  "model": "trophy.monster",
+  "pk": 7,
+  "fields": {
+    "endurance": 8,
+    "name": "Kulpsis",
+    "description": "Loping, emaciated humanoids with rows of razor-sharp teeth, claw-like hands and feet, and yellow, feral eyes; grave stench",
+    "habits": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "defences": "",
+    "weakness": "",
+    "position": 0,
+    "created_at": "2026-09-06T17:58:32.318Z"
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 9,
+  "fields": {
+    "character": 7,
+    "name": "Ward - keep concentrating to protect a small area",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 12,
+  "fields": {
+    "character": 8,
+    "name": "Hand - concentrate to mentally move a small object you can see",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 14,
+  "fields": {
+    "character": 10,
+    "name": "Beast - take a form halfway between human and animal",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 17,
+  "fields": {
+    "character": 9,
+    "name": "Beacon - nearby hidden creatures or objects shine with a fiery glow",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 19,
+  "fields": {
+    "character": 9,
+    "name": "Summon - draw a known creature to you",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 20,
+  "fields": {
+    "character": 11,
+    "name": "Medium - surface thoughts of nearby creatures enter and overwhelm a target",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 21,
+  "fields": {
+    "character": 11,
+    "name": "Circle - a creature within a ring of salt cannot inflict or suffer violence",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 22,
+  "fields": {
+    "character": 12,
+    "name": "Drain - remove all water from a creature",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 23,
+  "fields": {
+    "character": 12,
+    "name": "Martyr - touch a creature to transfer their Conditions to you",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 24,
+  "fields": {
+    "character": 12,
+    "name": "Rebirth - force a known spirit to be reborn in a new body",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 25,
+  "fields": {
+    "character": 13,
+    "name": "Void - remain silent to prevent the casting of any Ritual in your presence",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 26,
+  "fields": {
+    "character": 14,
+    "name": "Tripwire - a predefined illusory scene is triggered by an event of your choosing",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 27,
+  "fields": {
+    "character": 14,
+    "name": "Haunt - summon a spirit to torment a creature",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 28,
+  "fields": {
+    "character": 14,
+    "name": "Clock - time in a small area moves at an unnaturally fast or slow speed",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 29,
+  "fields": {
+    "character": 15,
+    "name": "Unravel - pull the threads of a Ritual to uncast it, and recast it somewhere else",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 30,
+  "fields": {
+    "character": 15,
+    "name": "Parse - divine the meaning of any word, writing, sound, sign, or symbol",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.power",
+  "pk": 31,
+  "fields": {
+    "character": 15,
+    "name": "Fault - strike the weakest point of an object with phantasmal force",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 6,
+  "fields": {
+    "character": 5,
+    "name": "Athletics",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 7,
+  "fields": {
+    "character": 5,
+    "name": "Defence",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 8,
+  "fields": {
+    "character": 6,
+    "name": "Endurance",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 9,
+  "fields": {
+    "character": 7,
+    "name": "Coordination",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 10,
+  "fields": {
+    "character": 7,
+    "name": "Rituals",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 11,
+  "fields": {
+    "character": 8,
+    "name": "Deals",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 12,
+  "fields": {
+    "character": 8,
+    "name": "Acrobatics",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 13,
+  "fields": {
+    "character": 8,
+    "name": "Security",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 14,
+  "fields": {
+    "character": 8,
+    "name": "Silence",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 15,
+  "fields": {
+    "character": 9,
+    "name": "Intimidation",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 16,
+  "fields": {
+    "character": 9,
+    "name": "Innocence",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 17,
+  "fields": {
+    "character": 9,
+    "name": "Sacrifice",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 18,
+  "fields": {
+    "character": 9,
+    "name": "Rituals",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 19,
+  "fields": {
+    "character": 10,
+    "name": "Grace",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 21,
+  "fields": {
+    "character": 10,
+    "name": "Interpretation",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 22,
+  "fields": {
+    "character": 10,
+    "name": "Rituals",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 23,
+  "fields": {
+    "character": 10,
+    "name": "Trances",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 24,
+  "fields": {
+    "character": 11,
+    "name": "perception",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 25,
+  "fields": {
+    "character": 11,
+    "name": "plants",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 26,
+  "fields": {
+    "character": 11,
+    "name": "remedies",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 27,
+  "fields": {
+    "character": 11,
+    "name": "saints",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 28,
+  "fields": {
+    "character": 12,
+    "name": "foraging",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 29,
+  "fields": {
+    "character": 12,
+    "name": "hunting",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 30,
+  "fields": {
+    "character": 12,
+    "name": "paths",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 31,
+  "fields": {
+    "character": 12,
+    "name": "deception",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 32,
+  "fields": {
+    "character": 13,
+    "name": "coordination",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 33,
+  "fields": {
+    "character": 13,
+    "name": "rituals",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 34,
+  "fields": {
+    "character": 13,
+    "name": "vermin",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 35,
+  "fields": {
+    "character": 13,
+    "name": "temptation",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 36,
+  "fields": {
+    "character": 14,
+    "name": "protection",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 37,
+  "fields": {
+    "character": 14,
+    "name": "speed",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 38,
+  "fields": {
+    "character": 14,
+    "name": "vigilance",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 39,
+  "fields": {
+    "character": 14,
+    "name": "patience",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 40,
+  "fields": {
+    "character": 15,
+    "name": "destruction",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 41,
+  "fields": {
+    "character": 15,
+    "name": "persistence",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 42,
+  "fields": {
+    "character": 15,
+    "name": "strength",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.skill",
+  "pk": 43,
+  "fields": {
+    "character": 15,
+    "name": "rebellion",
+    "position": 3
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 4,
+  "fields": {
+    "character": 5,
+    "name": "Big honking knife",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 5,
+  "fields": {
+    "character": 5,
+    "name": "Shotgun",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 6,
+  "fields": {
+    "character": 6,
+    "name": "Sturdy helmet",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 8,
+  "fields": {
+    "character": 7,
+    "name": "Set of throwing knives",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 10,
+  "fields": {
+    "character": 10,
+    "name": "Heavy pneumatic crossbow",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 11,
+  "fields": {
+    "character": 8,
+    "name": "Powered impact maul",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 12,
+  "fields": {
+    "character": 8,
+    "name": "Reinforced combat gloves",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 13,
+  "fields": {
+    "character": 11,
+    "name": "Hooked sickle sword",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 14,
+  "fields": {
+    "character": 11,
+    "name": "Weighted net",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 15,
+  "fields": {
+    "character": 12,
+    "name": "Assassin's blowgun",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 16,
+  "fields": {
+    "character": 12,
+    "name": "Throwing hatchet",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 17,
+  "fields": {
+    "character": 12,
+    "name": "Hunting spear",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 18,
+  "fields": {
+    "character": 13,
+    "name": "Fae-crafted chainmail",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 19,
+  "fields": {
+    "character": 13,
+    "name": "Full plate",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 20,
+  "fields": {
+    "character": 13,
+    "name": "Gnarled staff",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 21,
+  "fields": {
+    "character": 14,
+    "name": "Polished scalemail",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 22,
+  "fields": {
+    "character": 14,
+    "name": "Ornate cuirass",
+    "kind": "armor",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 23,
+  "fields": {
+    "character": 14,
+    "name": "Hefty cudgel",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 24,
+  "fields": {
+    "character": 15,
+    "name": "Hefty cudgel",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 25,
+  "fields": {
+    "character": 15,
+    "name": "Knight's lance",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.combatitem",
+  "pk": 26,
+  "fields": {
+    "character": 15,
+    "name": "Small but vicious dog",
+    "kind": "weapon",
+    "marked": false,
+    "ammo": 0,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 3,
+  "fields": {
+    "character": 8,
+    "name": "Kulpsis ichor (1 coin)",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 4,
+  "fields": {
+    "character": 9,
+    "name": "Kulpsis ichor (1 coin)",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 5,
+  "fields": {
+    "character": 8,
+    "name": "Käärmeen myrkkypussit (1 coin)",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 6,
+  "fields": {
+    "character": 10,
+    "name": "Crow statue (4 coins)",
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 25,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 26,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 27,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 28,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 29,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 30,
+  "fields": {
+    "character": 5,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 31,
+  "fields": {
+    "character": 6,
+    "name": "Mallet",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 32,
+  "fields": {
+    "character": 6,
+    "name": "",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 33,
+  "fields": {
+    "character": 6,
+    "name": "",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 34,
+  "fields": {
+    "character": 6,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 35,
+  "fields": {
+    "character": 6,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 36,
+  "fields": {
+    "character": 6,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 37,
+  "fields": {
+    "character": 7,
+    "name": "Flute",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 38,
+  "fields": {
+    "character": 7,
+    "name": "",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 39,
+  "fields": {
+    "character": 7,
+    "name": "",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 40,
+  "fields": {
+    "character": 7,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 41,
+  "fields": {
+    "character": 7,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 42,
+  "fields": {
+    "character": 7,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 43,
+  "fields": {
+    "character": 8,
+    "name": "Emergency candles, 2 hrs (12)",
+    "uses": 1,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 44,
+  "fields": {
+    "character": 8,
+    "name": "Compact signal mirror",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 45,
+  "fields": {
+    "character": 8,
+    "name": "Strong masking scent (6 uses)",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 46,
+  "fields": {
+    "character": 8,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 47,
+  "fields": {
+    "character": 8,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 48,
+  "fields": {
+    "character": 8,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 49,
+  "fields": {
+    "character": 9,
+    "name": "Steel chain (8 m)",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 50,
+  "fields": {
+    "character": 9,
+    "name": "Steel restraints / handcuffs",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 51,
+  "fields": {
+    "character": 9,
+    "name": "Mechanical puzzle box",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 52,
+  "fields": {
+    "character": 9,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 53,
+  "fields": {
+    "character": 9,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 54,
+  "fields": {
+    "character": 9,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 55,
+  "fields": {
+    "character": 10,
+    "name": "Bottle of good spirits",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 56,
+  "fields": {
+    "character": 10,
+    "name": "Sealing stamp & forensic/security wax",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 57,
+  "fields": {
+    "character": 10,
+    "name": "Military signal whistle",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 58,
+  "fields": {
+    "character": 10,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 59,
+  "fields": {
+    "character": 10,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 60,
+  "fields": {
+    "character": 10,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 61,
+  "fields": {
+    "character": 11,
+    "name": "Hourglass, 10 min. markers",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 62,
+  "fields": {
+    "character": 11,
+    "name": "Numbing herbs",
+    "uses": 3,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 63,
+  "fields": {
+    "character": 11,
+    "name": "Sewing kit",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 64,
+  "fields": {
+    "character": 11,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 65,
+  "fields": {
+    "character": 11,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 66,
+  "fields": {
+    "character": 11,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 67,
+  "fields": {
+    "character": 12,
+    "name": "Chalk, 3 colors",
+    "uses": 12,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 68,
+  "fields": {
+    "character": 12,
+    "name": "Crowbar",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 69,
+  "fields": {
+    "character": 12,
+    "name": "Heirloom compass",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 70,
+  "fields": {
+    "character": 12,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 71,
+  "fields": {
+    "character": 12,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 72,
+  "fields": {
+    "character": 12,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 73,
+  "fields": {
+    "character": 13,
+    "name": "Twine (300')",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 74,
+  "fields": {
+    "character": 13,
+    "name": "Wind chimes",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 75,
+  "fields": {
+    "character": 13,
+    "name": "Wooden mask, monstrous",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 76,
+  "fields": {
+    "character": 13,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 77,
+  "fields": {
+    "character": 13,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 78,
+  "fields": {
+    "character": 13,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 79,
+  "fields": {
+    "character": 14,
+    "name": "Glass marbles (30)",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 80,
+  "fields": {
+    "character": 14,
+    "name": "Pot of tar",
+    "uses": 6,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 81,
+  "fields": {
+    "character": 14,
+    "name": "Scroll tube (mystery scroll)",
+    "uses": 0,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 82,
+  "fields": {
+    "character": 14,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 83,
+  "fields": {
+    "character": 14,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 84,
+  "fields": {
+    "character": 14,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 85,
+  "fields": {
+    "character": 15,
+    "name": "Troll blood (heals 1 Ruin)",
+    "uses": 0,
+    "slot": 0,
+    "position": 0
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 86,
+  "fields": {
+    "character": 15,
+    "name": "Jar of glowworms (6)",
+    "uses": 0,
+    "slot": 1,
+    "position": 1
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 87,
+  "fields": {
+    "character": 15,
+    "name": "Vermin repellent",
+    "uses": 3,
+    "slot": 2,
+    "position": 2
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 88,
+  "fields": {
+    "character": 15,
+    "name": "",
+    "uses": 0,
+    "slot": 3,
+    "position": 3
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 89,
+  "fields": {
+    "character": 15,
+    "name": "",
+    "uses": 0,
+    "slot": 4,
+    "position": 4
+  }
+},
+{
+  "model": "trophy.backpackitem",
+  "pk": 90,
+  "fields": {
+    "character": 15,
+    "name": "",
+    "uses": 0,
+    "slot": 5,
+    "position": 5
+  }
+}
+]
