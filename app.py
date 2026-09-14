@@ -175,6 +175,44 @@ def custom_root_template(context: RootTemplateContext) -> str:
           }},
         }};
 
+        // Overview: collapse/expand the Hirelings and Archived column groups.
+        // Pure per-viewer view state (localStorage), applied by toggling a class
+        // on the table wrapper -- a static element the live per-cell diffs never
+        // touch, so the collapse survives character updates. Re-applied on every
+        // `updated()` as a belt-and-suspenders.
+        window.Hooks.OverviewGroups = {{
+          mounted() {{ this.bind(); this.apply(); }},
+          updated() {{ this.bind(); this.apply(); }},
+          key(g) {{ return "trophy-ov-hide-" + g; }},
+          hidden(g) {{
+            try {{ return localStorage.getItem(this.key(g)) === "1"; }} catch (e) {{ return false; }}
+          }},
+          apply() {{
+            const wrap = this.el.parentElement.querySelector(".ov-wrap");
+            ["hirelings", "archived"].forEach((g) => {{
+              const h = this.hidden(g);
+              if (wrap) wrap.classList.toggle("ov-hide-" + g, h);
+              const btn = this.el.querySelector('.ov-grp-btn[data-group="' + g + '"]');
+              if (btn) {{
+                btn.textContent = btn.dataset.label + (h ? " \\u25B8" : " \\u25BE");
+                btn.classList.toggle("btn-outline", h);
+              }}
+            }});
+          }},
+          bind() {{
+            this.el.querySelectorAll(".ov-grp-btn").forEach((btn) => {{
+              if (btn._ovBound) return;
+              btn._ovBound = true;
+              btn.addEventListener("click", () => {{
+                const g = btn.dataset.group;
+                const now = !this.hidden(g);
+                try {{ localStorage.setItem(this.key(g), now ? "1" : "0"); }} catch (e) {{}}
+                this.apply();
+              }});
+            }});
+          }},
+        }};
+
         // Spin a die on the mat whenever its value changes (i.e. on a roll),
         // the way cardplay's dice tumble.
         window.Hooks.DieSpin = {{

@@ -6,7 +6,7 @@
     .ov th, .ov td { border-right: 1px solid var(--color-base-300);
                      border-bottom: 1px solid var(--color-base-300);
                      padding: 0.3rem 0.6rem; text-align: left; vertical-align: top; }
-    .ov td, .ov th.ov-name { min-width: 9rem; max-width: 18rem;
+    .ov td, .ov th.ov-name { min-width: 18rem; max-width: 36rem;
                              white-space: normal; overflow-wrap: anywhere; }
     /* group header row (Characters / Hirelings) */
     .ov-group { position: sticky; top: 0; z-index: 4; height: 1.9rem;
@@ -22,6 +22,9 @@
                  background: var(--color-base-200); }
     /* divider before the Hirelings section */
     .ov-divider { border-left: 3px solid var(--color-base-content); }
+    /* collapsible groups: a per-viewer toggle hides a whole group's columns */
+    .ov-wrap.ov-hide-hirelings .og-hirelings { display: none; }
+    .ov-wrap.ov-hide-archived .og-archived { display: none; }
     .ov td .prose { font-size: 0.85rem; }
     .ov-list { list-style: disc; margin: 0; padding-left: 1.1rem; }
     .ov-list li { white-space: normal; }
@@ -33,20 +36,30 @@
     .ov-md ol { list-style: decimal; margin: 0.2rem 0; padding-left: 1.3rem; }
     .ov-md li { margin: 0.1rem 0; }
     .ov-md h1, .ov-md h2, .ov-md h3, .ov-md h4 { font-weight: 700; margin: 0.35rem 0 0.2rem; }
-    .ov-md strong { font-weight: 700; }
-    .ov-md em { font-style: italic; }
-    .ov-md code { background: var(--color-base-200); padding: 0 0.25rem; border-radius: 0.2rem;
-                  font-family: ui-monospace, monospace; font-size: 0.8em; }
+    /* inline formatting shared by markdown blocks and list-item cells */
+    .ov-md strong, .ov-list strong { font-weight: 700; }
+    .ov-md em, .ov-list em { font-style: italic; }
+    .ov-md del, .ov-list del { text-decoration: line-through; }
+    .ov-md code, .ov-list code { background: var(--color-base-200); padding: 0 0.25rem;
+                  border-radius: 0.2rem; font-family: ui-monospace, monospace; font-size: 0.8em; }
+    .ov-md a, .ov-list a { text-decoration: underline; }
     .ov-md blockquote { border-left: 2px solid var(--color-base-300); padding-left: 0.5rem;
                         margin: 0.3rem 0; opacity: 0.85; }
-    .ov-md a { text-decoration: underline; }
     .ov-md hr { border: 0; border-top: 1px solid var(--color-base-300); margin: 0.4rem 0; }
 </style>
 
 <div class="container mx-auto p-4 max-w-full">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4" id="ov-root" phx-hook="OverviewGroups">
         <h1 class="text-3xl font-bold">Overview</h1>
-        <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; Characters</a>
+        <div class="flex items-center gap-2">
+            {% if overview_hirelings %}
+            <button type="button" class="btn btn-xs ov-grp-btn" data-group="hirelings" data-label="Hirelings">Hirelings &#9662;</button>
+            {% endif %}
+            {% if overview_archived %}
+            <button type="button" class="btn btn-xs ov-grp-btn" data-group="archived" data-label="Archived">Archived &#9662;</button>
+            {% endif %}
+            <a href="/alive/character/" class="btn btn-ghost btn-sm">&larr; Characters</a>
+        </div>
     </div>
 
     {% if overview_players or overview_hirelings or overview_archived %}
@@ -59,21 +72,21 @@
                     <th class="ov-group" colspan="{{overview_player_count}}">Characters</th>
                     {% endif %}
                     {% if overview_hirelings %}
-                    <th class="ov-group ov-divider" colspan="{{overview_hireling_count}}">Hirelings</th>
+                    <th class="ov-group ov-divider og-hirelings" colspan="{{overview_hireling_count}}">Hirelings</th>
                     {% endif %}
                     {% if overview_archived %}
-                    <th class="ov-group ov-divider" colspan="{{overview_archived_count}}">Archived</th>
+                    <th class="ov-group ov-divider og-archived" colspan="{{overview_archived_count}}">Archived</th>
                     {% endif %}
                 </tr>
                 <tr class="ov-names">
                     {% for c in overview_players %}
-                    <th class="ov-name"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    <th class="ov-name"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}}{% if c.gender %} · {{c.gender}}{% endif %} &#9656;</a></th>
                     {% endfor %}
                     {% for c in overview_hirelings %}
-                    <th class="ov-name {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    <th class="ov-name og-hirelings {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}}{% if c.gender %} · {{c.gender}}{% endif %} &#9656;</a></th>
                     {% endfor %}
                     {% for c in overview_archived %}
-                    <th class="ov-name {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}} &#9656;</a></th>
+                    <th class="ov-name og-archived {% if loop.is_first %}ov-divider{% endif %}"><a class="link link-hover" href="/alive/character/?detail={{c.id}}#from-overview">{{c.name}}{% if c.gender %} · {{c.gender}}{% endif %} &#9656;</a></th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -85,10 +98,10 @@
                     <td>{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
                     {% endfor %}
                     {% for v in row.hireling_values %}
-                    <td class="{% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
+                    <td class="og-hirelings {% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
                     {% endfor %}
                     {% for v in row.archived_values %}
-                    <td class="{% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
+                    <td class="og-archived {% if loop.is_first %}ov-divider{% endif %}">{% if row.md %}<div class="ov-md">{{v}}</div>{% else %}{{v}}{% endif %}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %}

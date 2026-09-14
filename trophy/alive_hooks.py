@@ -12,9 +12,9 @@ from random import randint, choice
 
 from asgiref.sync import sync_to_async
 from django.apps import apps
-from markupsafe import Markup, escape
+from markupsafe import Markup
 
-from alive.components.editable_field import render_markdown_safe
+from alive.components.editable_field import render_markdown_safe, render_markdown_inline
 from alive.store import get_store, acquire_lock, release_lock, get_lock_holder
 
 from .context import TrophyContext
@@ -1096,7 +1096,13 @@ async def bestiary_load_hook(socket, *args):
 # ==========================================================================
 
 def _overview_col(ch):
-    return {"id": ch.id, "name": ch.name.strip() or "Unnamed"}
+    return {"id": ch.id, "name": ch.name.strip() or "Unnamed", "gender": ch.gender.strip()}
+
+
+def _pair(*parts):
+    """Join non-empty parts with a middot for a merged one-liner cell."""
+    vals = [str(p).strip() for p in parts if str(p).strip()]
+    return " · ".join(vals) if vals else "—"
 
 
 def _names(items):
@@ -1115,22 +1121,18 @@ def _ul(items):
     """Render a list of strings as a <ul>, or an em dash when empty."""
     if not items:
         return "—"
-    lis = "".join(f"<li>{escape(i)}</li>" for i in items)
+    lis = "".join(f"<li>{render_markdown_inline(i)}</li>" for i in items)
     return Markup(f'<ul class="ov-list">{lis}</ul>')
 
 
-# (label, value function) for plain scalar rows
+# (label, value function) for plain scalar rows. Name+Gender live in the column
+# header; several fields are merged into one-liners.
 _OVERVIEW_FIELDS = [
     ("Player", lambda ch: ch.player_name),
-    ("Gender", lambda ch: ch.gender),
-    ("Occupation", lambda ch: ch.occupation),
-    ("Background", lambda ch: ch.background),
+    ("Occupation · Background", lambda ch: _pair(ch.occupation, ch.background)),
     ("Look", lambda ch: ch.look),
-    ("Ruin", lambda ch: ch.ruin),
-    ("Burden", lambda ch: ch.burden),
-    ("Hoard", lambda ch: f"{ch.hoard} / {HOARD_MAX}"),
-    ("Coin", lambda ch: ch.coin),
-    ("Hunt Tokens", lambda ch: ch.hunt_tokens),
+    ("Ruin · Burden", lambda ch: f"{ch.ruin} · {ch.burden}"),
+    ("Coin · Hunt Tokens", lambda ch: f"{ch.coin} · {ch.hunt_tokens}"),
 ]
 # (label, items function) for rows rendered as a bulleted list
 _OVERVIEW_LIST_FIELDS = [
@@ -1138,7 +1140,6 @@ _OVERVIEW_LIST_FIELDS = [
     ("Powers", lambda ch: _names(ch.powers.all())),
     ("Combat", lambda ch: _names(ch.combat.all())),
     ("Backpack", lambda ch: _backpack_items(ch)),
-    ("Household", lambda ch: _names(ch.household.all())),
     ("Found", lambda ch: _names(ch.found.all())),
 ]
 _OVERVIEW_MD_FIELDS = [("Drive", "drive"), ("Conditions", "conditions"), ("Notes", "notes")]
@@ -1160,28 +1161,30 @@ def _fetch_overview():
         raw = getattr(ch, attr)
         return render_markdown_safe(raw) if raw and raw.strip() else "—"
 
-    rows = []
-    for label, fn in _OVERVIEW_FIELDS:
-        rows.append({
-            "label": label, "md": False,
-            "player_values": [scalar(fn, ch) for ch in players],
-            "hireling_values": [scalar(fn, ch) for ch in hirelings],
-            "archived_values": [scalar(fn, ch) for ch in archived],
-        })
-    for label, fn in _OVERVIEW_LIST_FIELDS:
-        rows.append({
-            "label": label, "md": False,
-            "player_values": [_ul(fn(ch)) for ch in players],
-            "hireling_values": [_ul(fn(ch)) for ch in hirelings],
-            "archived_values": [_ul(fn(ch)) for ch in archived],
-        })
-    for label, attr in _OVERVIEW_MD_FIELDS:
-        rows.append({
-            "label": label, "md": True,
-            "player_values": [md(attr, ch) for ch in players],
-            "hireling_values": [md(attr, ch) for ch in hirelings],
-            "archived_values": [md(attr, ch) for ch in archived],
-        })
+    def scalar_row(label, fn):
+        return {"label": label, "md": False,
+                "player_values": [scalar(fn, ch) for ch in players],
+                "hireling_values": [scalar(fn, ch) for ch in hirelings],
+                "archived_values": [scalar(fn, ch) for ch in archived]}
+
+    def list_row(label, fn):
+        return {"label": label, "md": False,
+                "player_values": [_ul(fn(ch)) for ch in players],
+                "hireling_values": [_ul(fn(ch)) for ch in hirelings],
+                "archived_values": [_ul(fn(ch)) for ch in archived]}
+
+    def md_row(label, attr):
+        return {"label": label, "md": True,
+                "player_values": [md(attr, ch) for ch in players],
+                "hireling_values": [md(attr, ch) for ch in hirelings],
+                "archived_values": [md(attr, ch) for ch in archived]}
+
+    rows = [scalar_row(l, fn) for l, fn in _OVERVIEW_FIELDS]
+    rows += [list_row(l, fn) for l, fn in _OVERVIEW_LIST_FIELDS]
+    rows += [md_row(l, a) for l, a in _OVERVIEW_MD_FIELDS]
+    # Hoard and Household sit at the very end of the list
+    rows.append(scalar_row("Hoard", lambda ch: f"{ch.hoard} / {HOARD_MAX}"))
+    rows.append(list_row("Household", lambda ch: _names(ch.household.all())))
     return {
         "overview_players": [_overview_col(ch) for ch in players],
         "overview_hirelings": [_overview_col(ch) for ch in hirelings],
