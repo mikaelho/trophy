@@ -76,24 +76,45 @@
 
         <div class="flex flex-wrap gap-3">
             {% for s in roller_sections %}
-            <div class="border border-base-300 rounded-xl p-3 bg-base-100 grow min-w-48">
+            <div class="border border-base-300 rounded-xl p-3 bg-base-100 grow min-w-56">
                 <div class="flex items-center gap-1 mb-2">
                     <input class="roller-input flex-1" value="{{s.name}}" name="value"
                            phx-blur="roller_rename_section" phx-value-id="{{s.id}}" autocomplete="off" />
                     <button class="btn btn-ghost btn-xs px-1" phx-click="roller_remove_section"
                             phx-value-id="{{s.id}}" title="Remove section">&times;</button>
                 </div>
-                <div class="flex flex-wrap gap-2 min-h-10 items-center">
+                <div class="flex flex-wrap gap-2 min-h-10 items-center mb-2">
                     {% for d in s.dice %}
                     <span id="die-{{d.id}}" class="die" phx-hook="DieSpin" data-v="{{d.v}}">{{d.svg}}</span>
                     {% endfor %}
+                    {% if not s.dice %}
+                    <span class="text-base-content/40 italic text-xs self-center">Add light or dark dice, then Roll.</span>
+                    {% endif %}
                 </div>
-                {% if not s.dice %}
-                <button class="btn btn-xs mt-2" phx-click="roller_section_add_die" phx-value-id="{{s.id}}">
-                    <svg viewBox="0 0 40 40" class="w-3.5 h-3.5"><rect x="2" y="2" width="36" height="36" rx="6" class="die-face-light"/></svg>
-                    Add die
-                </button>
-                {% endif %}
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <button class="add-die" phx-click="roller_section_add_die" phx-value-id="{{s.id}}" phx-value-color="light" title="Add a light die">
+                            <svg viewBox="0 0 40 40" class="w-7 h-7">
+                                <rect x="2" y="2" width="36" height="36" rx="6" class="die-face-light"/>
+                                <circle cx="11" cy="11" r="3.6" class="die-pip-light"/><circle cx="29" cy="11" r="3.6" class="die-pip-light"/>
+                                <circle cx="11" cy="20" r="3.6" class="die-pip-light"/><circle cx="29" cy="20" r="3.6" class="die-pip-light"/>
+                                <circle cx="11" cy="29" r="3.6" class="die-pip-light"/><circle cx="29" cy="29" r="3.6" class="die-pip-light"/>
+                            </svg>
+                        </button>
+                        <button class="add-die" phx-click="roller_section_add_die" phx-value-id="{{s.id}}" phx-value-color="dark" title="Add a dark die">
+                            <svg viewBox="0 0 40 40" class="w-7 h-7">
+                                <rect x="2" y="2" width="36" height="36" rx="6" class="die-face-dark"/>
+                                <circle cx="11" cy="11" r="3.6" class="die-pip-dark"/><circle cx="29" cy="11" r="3.6" class="die-pip-dark"/>
+                                <circle cx="11" cy="20" r="3.6" class="die-pip-dark"/><circle cx="29" cy="20" r="3.6" class="die-pip-dark"/>
+                                <circle cx="11" cy="29" r="3.6" class="die-pip-dark"/><circle cx="29" cy="29" r="3.6" class="die-pip-dark"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="btn btn-xs btn-primary" phx-click="roller_section_roll" phx-value-id="{{s.id}}">Roll</button>
+                        <button class="btn btn-xs btn-ghost" phx-click="roller_section_clear" phx-value-id="{{s.id}}">Clear</button>
+                    </div>
+                </div>
             </div>
             {% endfor %}
         </div>

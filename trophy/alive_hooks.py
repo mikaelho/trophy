@@ -613,7 +613,7 @@ def _roller_add_die(color):
 
 @sync_to_async(thread_sensitive=False)
 def _roller_roll():
-    # Only the central mat is rolled; section dice are rolled as they are added.
+    # Only the central mat is rolled here; each section has its own Roll.
     r = _roller()
     for d in r.mat:
         d["value"] = randint(1, 6)
@@ -628,12 +628,31 @@ def _roller_clear():
 
 
 @sync_to_async(thread_sensitive=False)
-def _roller_section_add_die(sid):
-    # A section die is rolled the moment it is added.
+def _roller_section_add_die(sid, color):
+    # Add an unrolled die to the section (rolled later via the section's Roll).
     r = _roller()
     for s in r.sections:
-        if s["id"] == sid and not s.get("dice"):   # at most one die per section
-            s["dice"] = [{"id": _uid(), "color": "light", "value": randint(1, 6)}]
+        if s["id"] == sid:
+            s.setdefault("dice", []).append({"id": _uid(), "color": color, "value": None})
+    r.save(update_fields=["sections", "updated_at"])
+
+
+@sync_to_async(thread_sensitive=False)
+def _roller_section_roll(sid):
+    r = _roller()
+    for s in r.sections:
+        if s["id"] == sid:
+            for d in s.get("dice", []):
+                d["value"] = randint(1, 6)
+    r.save(update_fields=["sections", "updated_at"])
+
+
+@sync_to_async(thread_sensitive=False)
+def _roller_section_clear(sid):
+    r = _roller()
+    for s in r.sections:            # keep the section name, drop its dice
+        if s["id"] == sid:
+            s["dice"] = []
     r.save(update_fields=["sections", "updated_at"])
 
 
@@ -695,8 +714,23 @@ async def roller_event_handler(event, payload, socket):
 
     if event == "roller_section_add_die":
         sid = _val(payload, "id")
+        color = _val(payload, "color")
+        if sid and color in ("light", "dark"):
+            await _roller_section_add_die(sid, color)
+            await _roller_sync(socket)
+        return True
+
+    if event == "roller_section_roll":
+        sid = _val(payload, "id")
         if sid:
-            await _roller_section_add_die(sid)
+            await _roller_section_roll(sid)
+            await _roller_sync(socket)
+        return True
+
+    if event == "roller_section_clear":
+        sid = _val(payload, "id")
+        if sid:
+            await _roller_section_clear(sid)
             await _roller_sync(socket)
         return True
 
