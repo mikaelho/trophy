@@ -7,6 +7,7 @@ one-element list PyView sends.
 """
 
 import secrets
+import threading
 from pathlib import Path
 from random import randint, choice
 
@@ -604,87 +605,105 @@ def _roller():
     return r
 
 
+# The shared Roller row (mat + sections) lives in one JSON blob. These mutations
+# run on separate threads (sync_to_async, thread_sensitive=False), and sqlite has
+# no usable row lock, so concurrent read-modify-write would lose updates -- e.g.
+# rapid "add die" clicks landing as one die, or a die left unrolled when a roll
+# overlaps an add. Serialize every roller write through one process-wide lock.
+_ROLLER_LOCK = threading.Lock()
+
+
 @sync_to_async(thread_sensitive=False)
 def _roller_add_die(color):
-    r = _roller()
-    r.mat.append({"id": _uid(), "color": color, "value": None})
-    r.save(update_fields=["mat", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        r.mat.append({"id": _uid(), "color": color, "value": None})
+        r.save(update_fields=["mat", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_roll():
     # Only the central mat is rolled here; each section has its own Roll.
-    r = _roller()
-    for d in r.mat:
-        d["value"] = randint(1, 6)
-    r.save(update_fields=["mat", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for d in r.mat:
+            d["value"] = randint(1, 6)
+        r.save(update_fields=["mat", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_clear():
-    r = _roller()
-    r.mat = []                      # section dice are left untouched
-    r.save(update_fields=["mat", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        r.mat = []                      # section dice are left untouched
+        r.save(update_fields=["mat", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_section_add_die(sid, color):
     # Add an unrolled die to the section (rolled later via the section's Roll).
-    r = _roller()
-    for s in r.sections:
-        if s["id"] == sid:
-            s.setdefault("dice", []).append({"id": _uid(), "color": color, "value": None})
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for s in r.sections:
+            if s["id"] == sid:
+                s.setdefault("dice", []).append({"id": _uid(), "color": color, "value": None})
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_section_roll(sid):
-    r = _roller()
-    for s in r.sections:
-        if s["id"] == sid:
-            for d in s.get("dice", []):
-                d["value"] = randint(1, 6)
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for s in r.sections:
+            if s["id"] == sid:
+                for d in s.get("dice", []):
+                    d["value"] = randint(1, 6)
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_section_clear(sid):
-    r = _roller()
-    for s in r.sections:            # keep the section name, drop its dice
-        if s["id"] == sid:
-            s["dice"] = []
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for s in r.sections:            # keep the section name, drop its dice
+            if s["id"] == sid:
+                s["dice"] = []
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_clear_sections():
-    r = _roller()
-    for s in r.sections:            # keep the section names, drop their dice
-        s["dice"] = []
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for s in r.sections:            # keep the section names, drop their dice
+            s["dice"] = []
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_add_section(name):
-    r = _roller()
-    r.sections.append({"id": _uid(), "name": name, "dice": []})
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        r.sections.append({"id": _uid(), "name": name, "dice": []})
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_remove_section(sid):
-    r = _roller()
-    r.sections = [s for s in r.sections if s["id"] != sid]
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        r.sections = [s for s in r.sections if s["id"] != sid]
+        r.save(update_fields=["sections", "updated_at"])
 
 
 @sync_to_async(thread_sensitive=False)
 def _roller_rename_section(sid, name):
-    r = _roller()
-    for s in r.sections:
-        if s["id"] == sid:
-            s["name"] = name
-    r.save(update_fields=["sections", "updated_at"])
+    with _ROLLER_LOCK:
+        r = _roller()
+        for s in r.sections:
+            if s["id"] == sid:
+                s["name"] = name
+        r.save(update_fields=["sections", "updated_at"])
 
 
 async def _roller_sync(socket):
