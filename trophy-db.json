@@ -825,14 +825,14 @@
     "player_name": "Pasi",
     "occupation": "Lockpick",
     "background": "Liberated prisoner",
-    "look": "hoarse, utilitarian, loose",
+    "look": "Hoarse, utilitarian, loose",
     "drive": "Commission a glorious statue of your deity, Saint Yadyck",
     "conditions": "",
     "notes": "Saint Yadyck of the Loam:\n\n- Her followers’ rich mulch is sprinkled across their fecund fields, but none will share in their silent harvest.\n- No one speaks the name Yadyck anymore",
-    "ruin": 2,
+    "ruin": 3,
     "hoard": 0,
     "coin": 0,
-    "hunt_tokens": 1,
+    "hunt_tokens": 0,
     "burden_offset": 0,
     "hireling": false,
     "archived": false,
@@ -858,7 +858,7 @@
     "hunt_tokens": 0,
     "burden_offset": 0,
     "hireling": false,
-    "archived": false,
+    "archived": true,
     "created_at": "2026-09-06T15:59:59.878Z"
   }
 },
@@ -871,14 +871,14 @@
     "player_name": "Julle",
     "occupation": "Oracle",
     "background": "Banished Dancer",
-    "look": "Uncertain, cryptic, feverish",
+    "look": "Devious, cryptic, feverish",
     "drive": "Break the siege on your sibling’s fortress",
-    "conditions": "1. Avoiding bushes\n1. Servant of Malphast",
-    "notes": "- Tall, muscular, flowing blond hair, toga that reveals & hides in/appropriately\n- Fake ritual is REALLY convincing to the rest of the party-",
-    "ruin": 3,
+    "conditions": "1. Avoiding bushes\n1. ~~Servant of Malphast~~",
+    "notes": "- Tall, muscular, flowing dark hair, toga that reveals & hides in/appropriately\n- Fake ritual is REALLY convincing to the rest of the party",
+    "ruin": 5,
     "hoard": 0,
     "coin": 0,
-    "hunt_tokens": 0,
+    "hunt_tokens": 1,
     "burden_offset": 0,
     "hireling": false,
     "archived": false,
@@ -894,7 +894,7 @@
     "player_name": "",
     "occupation": "Herbalist",
     "background": "Failed Pilgrim",
-    "look": "",
+    "look": "blunt, flushed, muscular",
     "drive": "Buy the orphanage where you were mistreated",
     "conditions": "",
     "notes": "",
@@ -917,7 +917,7 @@
     "player_name": "",
     "occupation": "Guide",
     "background": "Escaped Cultist",
-    "look": "",
+    "look": "whispery, dusty, cumbersome",
     "drive": "Finance an expedition into the Blossoming Sea",
     "conditions": "",
     "notes": "",
@@ -940,7 +940,7 @@
     "player_name": "",
     "occupation": "Nest",
     "background": "Lured Innocent",
-    "look": "",
+    "look": "towering, stained, unruly",
     "drive": "Become part of the Swirling Court",
     "conditions": "",
     "notes": "",
@@ -963,7 +963,7 @@
     "player_name": "",
     "occupation": "Bodyguard",
     "background": "Devoted Widow",
-    "look": "",
+    "look": "upright, nervous, worn",
     "drive": "Pay your father's debt to Bright-Teeth Assyrio",
     "conditions": "",
     "notes": "",
@@ -986,11 +986,11 @@
     "player_name": "",
     "occupation": "Ox",
     "background": "Oppressed Laborer",
-    "look": "",
+    "look": "creaking, muscular, many rings",
     "drive": "Take Cyrus's place at the Earthen Council",
     "conditions": "",
     "notes": "",
-    "ruin": 4,
+    "ruin": 3,
     "hoard": 0,
     "coin": 0,
     "hunt_tokens": 0,
@@ -1004,20 +1004,20 @@
   "model": "trophy.roller",
   "pk": 1,
   "fields": {
-    "mat": [
+    "mat": [],
+    "sections": [
       {
-        "id": "dee7f35f",
-        "color": "light",
-        "value": 6
+        "id": "6b28f4c5",
+        "name": "Evian",
+        "dice": []
       },
       {
-        "id": "e539b40b",
-        "color": "light",
-        "value": 6
+        "id": "323bfe81",
+        "name": "Tracksey",
+        "dice": []
       }
     ],
-    "sections": [],
-    "updated_at": "2026-09-06T18:41:03.217Z"
+    "updated_at": "2026-09-14T18:21:52.229Z"
   }
 },
 {
@@ -1039,6 +1039,27 @@
     "weakness": "",
     "position": 0,
     "created_at": "2026-09-06T17:58:32.318Z"
+  }
+},
+{
+  "model": "trophy.monster",
+  "pk": 8,
+  "fields": {
+    "endurance": 8,
+    "name": "Tentacrow",
+    "description": "A lesser demon, roughly 5-feet tall, with the upper body of a toothy, pitch-black corvid, and a lower body of thick, black tentacles.",
+    "habits": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "defences": "",
+    "weakness": "",
+    "position": 1,
+    "created_at": "2026-09-13T17:16:40.672Z"
   }
 },
 {
@@ -1174,15 +1195,6 @@
     "character": 15,
     "name": "Unravel - pull the threads of a Ritual to uncast it, and recast it somewhere else",
     "position": 0
-  }
-},
-{
-  "model": "trophy.power",
-  "pk": 30,
-  "fields": {
-    "character": 15,
-    "name": "Parse - divine the meaning of any word, writing, sound, sign, or symbol",
-    "position": 1
   }
 },
 {
@@ -1640,23 +1652,11 @@
   "pk": 15,
   "fields": {
     "character": 12,
-    "name": "Assassin's blowgun",
+    "name": "Silenced one-shot pistol",
     "kind": "weapon",
     "marked": false,
     "ammo": 0,
     "position": 0
-  }
-},
-{
-  "model": "trophy.combatitem",
-  "pk": 16,
-  "fields": {
-    "character": 12,
-    "name": "Throwing hatchet",
-    "kind": "weapon",
-    "marked": false,
-    "ammo": 0,
-    "position": 1
   }
 },
 {
@@ -1748,23 +1748,11 @@
   "pk": 24,
   "fields": {
     "character": 15,
-    "name": "Hefty cudgel",
+    "name": "Hefty \"walking\" staff",
     "kind": "weapon",
     "marked": false,
     "ammo": 0,
     "position": 0
-  }
-},
-{
-  "model": "trophy.combatitem",
-  "pk": 25,
-  "fields": {
-    "character": 15,
-    "name": "Knight's lance",
-    "kind": "weapon",
-    "marked": false,
-    "ammo": 0,
-    "position": 1
   }
 },
 {
@@ -1813,6 +1801,33 @@
     "character": 10,
     "name": "Crow statue (4 coins)",
     "position": 0
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 7,
+  "fields": {
+    "character": 10,
+    "name": "Crow's Eye (still active alive) (1 coin)",
+    "position": 1
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 8,
+  "fields": {
+    "character": 8,
+    "name": "Korpin nokka hampailla, tuntematonta metallia (1 coin)",
+    "position": 2
+  }
+},
+{
+  "model": "trophy.foundequipment",
+  "pk": 9,
+  "fields": {
+    "character": 8,
+    "name": "Shotgun, jammed (Miken)",
+    "position": 3
   }
 },
 {
