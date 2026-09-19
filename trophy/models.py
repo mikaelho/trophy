@@ -54,6 +54,11 @@ class Character(models.Model, AliveMixin):
     hireling = models.BooleanField(default=False)
     archived = models.BooleanField(default=False)
 
+    # Hearthfire (between-incursion activities). Checkbox state is a single
+    # indexed blob keyed by option id, not a column per box.
+    hearthfire_marks = models.JSONField(default=dict, blank=True)
+    hearthfire_secret = models.CharField(max_length=300, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

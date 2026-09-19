@@ -21,6 +21,8 @@ class TrophyContext(ModelContext):
     combat: list[dict] = field(default_factory=list)
     found: list[dict] = field(default_factory=list)
     backpack: list[dict] = field(default_factory=list)
+    hearthfire: list[dict] = field(default_factory=list)
+    fort_duhrin_revealed: bool = False
 
     ruin: int = 1
     burden: int = 1

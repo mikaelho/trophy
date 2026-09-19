@@ -213,6 +213,34 @@ def custom_root_template(context: RootTemplateContext) -> str:
           }},
         }};
 
+        // Generic collapsible section (Fort Duhrin). Per-viewer state in
+        // localStorage keyed by data-key; the `collapsed` class is toggled on
+        // this static hook element, which the live per-cell diffs never touch.
+        window.Hooks.Collapsible = {{
+          mounted() {{ this.bind(); this.apply(); }},
+          updated() {{ this.apply(); }},
+          collapsed() {{
+            try {{ return localStorage.getItem(this.el.dataset.key) === "1"; }} catch (e) {{ return false; }}
+          }},
+          apply() {{
+            const c = this.collapsed();
+            this.el.classList.toggle("collapsed", c);
+            const a = this.el.querySelector(".fd-arrow");
+            if (a) a.textContent = c ? "\\u25B8" : "\\u25BE";
+          }},
+          bind() {{
+            const btn = this.el.querySelector(".fd-toggle");
+            if (btn && !btn._bound) {{
+              btn._bound = true;
+              btn.addEventListener("click", () => {{
+                const c = !this.el.classList.contains("collapsed");
+                try {{ localStorage.setItem(this.el.dataset.key, c ? "1" : "0"); }} catch (e) {{}}
+                this.apply();
+              }});
+            }}
+          }},
+        }};
+
         // Spin a die on the mat whenever its value changes (i.e. on a roll),
         // the way cardplay's dice tumble.
         window.Hooks.DieSpin = {{
