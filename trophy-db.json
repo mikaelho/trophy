@@ -767,6 +767,8 @@
     "burden_offset": 0,
     "hireling": true,
     "archived": false,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-05T08:12:34.071Z"
   }
 },
@@ -790,6 +792,8 @@
     "burden_offset": 2,
     "hireling": true,
     "archived": false,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-05T08:13:59.282Z"
   }
 },
@@ -813,6 +817,8 @@
     "burden_offset": 2,
     "hireling": true,
     "archived": false,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-05T08:36:39.727Z"
   }
 },
@@ -836,6 +842,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": false,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-06T15:35:01.231Z"
   }
 },
@@ -859,6 +867,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-06T15:59:59.878Z"
   }
 },
@@ -882,6 +892,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": false,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-06T16:00:06.870Z"
   }
 },
@@ -905,6 +917,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-12T17:13:09.520Z"
   }
 },
@@ -928,6 +942,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-12T17:13:09.529Z"
   }
 },
@@ -951,6 +967,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-12T17:13:09.538Z"
   }
 },
@@ -974,6 +992,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-12T17:13:09.545Z"
   }
 },
@@ -997,6 +1017,8 @@
     "burden_offset": 0,
     "hireling": false,
     "archived": true,
+    "hearthfire_marks": {},
+    "hearthfire_secret": "",
     "created_at": "2026-09-12T17:13:09.553Z"
   }
 },
