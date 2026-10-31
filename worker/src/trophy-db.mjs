@@ -7,8 +7,10 @@
 // datetimes as ISO strings ending in "Z".
 //
 // Every write is an "op" (an intent such as "add a power", never "here is the new list").
-// apply() runs one op synchronously and returns which rows changed, so the room can
-// broadcast exactly those rows to everybody.
+// apply() runs one op synchronously in a transaction and returns which rows changed, so the
+// room can broadcast exactly those rows to everybody. Changes are numbered (seq, kept in the
+// database so the numbering survives restarts). An op may carry an id (oid): an op whose id
+// was already applied is not applied again, and gets the original result back.
 
 import {
   DDL, MODELS, CHILD_KINDS, SCHEMA_VERSION,
@@ -21,6 +23,8 @@ const INT_FIELDS = new Set(['hoard', 'coin', 'hunt_tokens']);
 const FLAG_FIELDS = new Set(['hireling', 'archived']);
 
 export class OpError extends Error {}
+
+const APPLIED_KEEP_MS = 2 * 24 * 3600 * 1000; // how long applied op ids are remembered
 
 // --- value conversion -----------------------------------------------------
 
@@ -66,19 +70,36 @@ const defaultIn = (model, col) => {
   return valueIn(model, col, kindOf(d) === 'json' ? [] : kindOf(d) === 'datetime' ? null : d);
 };
 
+// Ids for dice and roller sections, from the platform's random source (same in Node and Workers).
+const uid = () => [...crypto.getRandomValues(new Uint8Array(4))].map(b => b.toString(16).padStart(2, '0')).join('');
+const HABIT_COUNT = 6;
+const MONSTER_TEXT_FIELDS = new Set(['name', 'description', 'defences', 'weakness']);
+const DIE_COLORS = new Set(['light', 'dark']);
+
 const toInt = (v, dflt = 0) => { const n = parseInt(String(v ?? '').trim(), 10); return Number.isFinite(n) ? n : dflt; };
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
 // --- the database ---------------------------------------------------------
 
 export class TrophyDB {
-  constructor(sql) {
-    this.sql = sql;
+  constructor(sql, { now = () => Date.now() } = {}) {
+    this.sql = sql; this.now = now;
     for (const q of DDL) sql.all(q);
-    const v = sql.all(`SELECT value FROM trophy_meta WHERE key = 'schema_version'`)[0];
-    if (!v) sql.all(`INSERT INTO trophy_meta (key, value) VALUES ('schema_version', ?)`, String(SCHEMA_VERSION));
-    // Future schema changes: compare v.value with SCHEMA_VERSION and upgrade here.
+    if (this.getMeta('schema_version') == null) this.setMeta('schema_version', SCHEMA_VERSION);
+    // Future schema changes: compare getMeta('schema_version') with SCHEMA_VERSION and upgrade here.
+    if (this.getMeta('epoch') == null) this.setMeta('epoch', Math.random().toString(36).slice(2, 10));
+    this.epoch = this.getMeta('epoch');
+    this.seq = Number(this.getMeta('seq') || 0);
   }
+
+  getMeta(key) {
+    const r = this.sql.all(`SELECT value FROM trophy_meta WHERE key = ?`, key)[0];
+    return r ? r.value : null;
+  }
+  setMeta(key, value) {
+    this.sql.all(`INSERT INTO trophy_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`, key, String(value));
+  }
+  bumpSeq() { this.seq++; this.setMeta('seq', this.seq); }
 
   // low-level helpers
   get(model, id) {
@@ -150,8 +171,10 @@ export class TrophyDB {
           }
           this.insert(m, values, x.pk);
         }
+        this.bumpSeq();
       });
     } catch (e) {
+      this.seq = Number(this.getMeta('seq') || 0);
       throw new OpError('The dump could not be loaded: ' + e.message);
     }
     return items.length;
@@ -159,13 +182,34 @@ export class TrophyDB {
 
   // --- write operations ------------------------------------------------------
 
-  // Run one op. Returns { result, changed: [[model, row]], deleted: [[model, id]] }.
-  apply(op, args = {}) {
+  // Run one op. Returns { result, changed: [[model, row]], deleted: [[model, id]], seq, duplicate }.
+  // `seq` is the number of this change (unchanged when nothing changed).
+  apply(op, args = {}, oid = null) {
     const fn = OPS[op];
     if (!fn) throw new OpError('Unknown operation: ' + op);
-    const ch = new Changes(this);
-    const result = fn.call(this, args, ch);
-    return { result: result ?? null, ...ch.collect() };
+    oid = oid == null ? null : String(oid).slice(0, 64);
+    if (oid) {
+      const seen = this.sql.all(`SELECT result FROM trophy_applied WHERE oid = ?`, oid)[0];
+      if (seen) return { result: JSON.parse(seen.result), changed: [], deleted: [], seq: this.seq, duplicate: true };
+    }
+    const seqBefore = this.seq;
+    try {
+      return this.sql.transaction(() => {
+        const ch = new Changes(this);
+        const result = fn.call(this, args, ch) ?? null;
+        const out = { result, ...ch.collect(), duplicate: false };
+        if (out.changed.length || out.deleted.length) this.bumpSeq();
+        if (oid) {
+          const now = this.now();
+          this.sql.all(`DELETE FROM trophy_applied WHERE at < ?`, now - APPLIED_KEEP_MS);
+          this.sql.all(`INSERT INTO trophy_applied (oid, at, result) VALUES (?, ?, ?)`, oid, now, JSON.stringify(result));
+        }
+        return { ...out, seq: this.seq };
+      });
+    } catch (e) {
+      this.seq = seqBefore; // the transaction was rolled back
+      throw e;
+    }
   }
 
   character(id) {
@@ -317,6 +361,98 @@ const OPS = {
     this.update('backpackitem', r.id, { uses: Math.max(0, r.uses + d) });
     ch.touch('backpackitem', r.id);
   },
+};
+
+// --- Dice roller: one shared row (id 1) holding the mat and per-section trays as JSON ------
+// mat: [{id, color, value, roll}]   sections: [{id, name, dice: [{id, color, value, roll}]}]
+// `roll` counts rolls of that die, so the page can animate a re-roll that lands on the same face.
+// The browser whose Roll button was clicked rolls the dice and sends the faces as
+// values: {dieId: 1..6}; the room only checks and stores them. A die missing from `values`
+// (added by someone else meanwhile) is left as it was.
+
+TrophyDB.prototype.roller = function () {
+  let r = this.get('roller', 1);
+  if (!r) { this.insert('roller', { mat: [], sections: [] }, 1); r = this.get('roller', 1); }
+  return { mat: Array.isArray(r.mat) ? r.mat : [], sections: Array.isArray(r.sections) ? r.sections : [] };
+};
+TrophyDB.prototype.saveRoller = function (r, ch) {
+  this.update('roller', 1, { mat: r.mat, sections: r.sections, updated_at: new Date(this.now()).toISOString() });
+  ch.touch('roller', 1);
+};
+const newDie = color => ({ id: uid(), color, value: null });
+function rolled(dice, values) {
+  if (!values || typeof values !== 'object') throw new OpError('No dice values sent.');
+  for (const v of Object.values(values)) {
+    if (!Number.isInteger(v) || v < 1 || v > 6) throw new OpError('Dice show 1 to 6.');
+  }
+  return dice.map(d => d.id in values ? { ...d, value: values[d.id], roll: (Number(d.roll) || 0) + 1 } : d);
+}
+const color = c => { if (!DIE_COLORS.has(c)) throw new OpError('Unknown die colour.'); return c; };
+function section(r, sid) {
+  const s = r.sections.find(x => x.id === sid);
+  if (!s) throw new OpError('No such section.');
+  s.dice = Array.isArray(s.dice) ? s.dice : [];
+  return s;
+}
+
+Object.assign(OPS, {
+  roller_add_die({ color: c }, ch) { const r = this.roller(); r.mat.push(newDie(color(c))); this.saveRoller(r, ch); },
+  roller_roll({ values }, ch) { const r = this.roller(); r.mat = rolled(r.mat, values); this.saveRoller(r, ch); },
+  roller_clear(_, ch) { const r = this.roller(); r.mat = []; this.saveRoller(r, ch); },
+  roller_add_section({ name }, ch) {
+    const nm = String(name ?? '').trim().slice(0, 120);
+    if (!nm) return;
+    const r = this.roller(), id = uid();
+    r.sections.push({ id, name: nm, dice: [] }); this.saveRoller(r, ch);
+    return { id };
+  },
+  roller_rename_section({ sid, name }, ch) {
+    const r = this.roller(); section(r, sid).name = String(name ?? '').trim().slice(0, 120); this.saveRoller(r, ch);
+  },
+  roller_remove_section({ sid }, ch) {
+    const r = this.roller(); section(r, sid); r.sections = r.sections.filter(s => s.id !== sid); this.saveRoller(r, ch);
+  },
+  roller_section_add_die({ sid, color: c }, ch) {
+    const r = this.roller(); section(r, sid).dice.push(newDie(color(c))); this.saveRoller(r, ch);
+  },
+  roller_section_roll({ sid, values }, ch) {
+    const r = this.roller(), s = section(r, sid); s.dice = rolled(s.dice, values); this.saveRoller(r, ch);
+  },
+  roller_section_clear({ sid }, ch) { const r = this.roller(); section(r, sid).dice = []; this.saveRoller(r, ch); },
+  roller_clear_sections(_, ch) { const r = this.roller(); for (const s of r.sections) s.dice = []; this.saveRoller(r, ch); },
+
+  // --- Bestiary ---------------------------------------------------------------
+  monster_add(_, ch) {
+    const last = this.sql.all(`SELECT MAX(position) AS p FROM trophy_monster`)[0];
+    const id = this.insert('monster', { position: last && last.p != null ? Number(last.p) + 1 : 0, habits: Array(HABIT_COUNT).fill('') });
+    ch.touch('monster', id);
+    return { id };
+  },
+  monster_remove({ id }, ch) {
+    const m = this.monster(id);
+    this.remove('monster', m.id); ch.remove('monster', m.id);
+  },
+  monster_save({ id, field, value }, ch) {
+    const m = this.monster(id);
+    if (MONSTER_TEXT_FIELDS.has(field)) this.update('monster', m.id, { [field]: String(value ?? '').trim() });
+    else if (field === 'endurance') this.update('monster', m.id, { endurance: Math.max(0, toInt(value, 0)) });
+    else throw new OpError('Unknown field: ' + field);
+    ch.touch('monster', m.id);
+  },
+  monster_save_habit({ id, n, value }, ch) {
+    const m = this.monster(id), k = toInt(n);
+    if (k < 1 || k > HABIT_COUNT) throw new OpError('Habits are numbered 1 to 6.');
+    const habits = [...(Array.isArray(m.habits) ? m.habits : []), ...Array(HABIT_COUNT).fill('')].slice(0, HABIT_COUNT);
+    habits[k - 1] = String(value ?? '').trim();
+    this.update('monster', m.id, { habits });
+    ch.touch('monster', m.id);
+  },
+});
+
+TrophyDB.prototype.monster = function (id) {
+  const m = this.get('monster', toInt(id));
+  if (!m) throw new OpError('No such monster.');
+  return m;
 };
 
 TrophyDB.prototype.bumpRuin = function (c, delta, ch) {

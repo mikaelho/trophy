@@ -7,10 +7,14 @@ import { relayConfig } from './transport.js';
 import { Data } from './data.js';
 import { installKeys, toast, attempt } from './ui.js';
 import { characterList, characterSheet } from './views/characters.js';
+import { overview } from './views/overview.js';
+import { roller } from './views/roller.js';
+import { bestiary } from './views/bestiary.js';
+import { equipment } from './views/equipment.js';
 
 const root = document.getElementById('app');
 const SAVED = 'trophy-relay';
-const ROUTE_KEYS = ['view', 'id'];
+const ROUTE_KEYS = ['view', 'id', 'from'];
 
 // --- relay settings: from the address, else from the last visit ---------------------
 let cfg = relayConfig();
@@ -54,7 +58,7 @@ const app = {
   focusAfter: null,    // selector to focus after the next render
   route() {
     const q = new URLSearchParams(location.search);
-    return { view: q.get('view') || '', id: q.get('id') ? Number(q.get('id')) : null };
+    return { view: q.get('view') || '', id: q.get('id') ? Number(q.get('id')) : null, from: q.get('from') || '' };
   },
   href(route) {
     const q = new URLSearchParams(relaySearch());
@@ -121,19 +125,38 @@ function importData() {
 function page() {
   const { view, id } = app.route();
   if (view === 'character' && id) return characterSheet(app, id);
+  if (view === 'overview') return overview(app);
+  if (view === 'roller') return roller(app);
+  if (view === 'bestiary') return bestiary(app);
+  if (view === 'equipment') return equipment(app);
   return characterList(app);
 }
 
-const statusText = { connecting: 'Connecting…', live: 'Connected', offline: 'Reconnecting…' };
+const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['equipment', 'Equipment']];
+const navView = () => { const { view } = app.route(); return view === 'character' ? '' : view; };
+
+const statusText = { connecting: 'Connecting…', live: 'Connected', offline: 'Reconnecting…', outdated: 'Update needed' };
+
+function banner(d) {
+  const waiting = d.outbox.length;
+  const waitingText = waiting ? ` ${waiting} text ${waiting === 1 ? 'edit is' : 'edits are'} kept and will be sent when the connection is back.` : '';
+  if (d.status === 'outdated') return html`<div class="banner error">${d.problem}
+    <button class="btn btn-sm" @click=${() => location.reload()}>Reload</button></div>`;
+  if (d.status === 'offline') return html`<div class="banner">Connection lost — reconnecting.${waitingText}
+    ${d.problem ? html`<div class="banner-detail">${d.problem}</div>` : nothing}
+    <button class="btn btn-sm" @click=${() => d.retry()}>Retry now</button></div>`;
+  return nothing;
+}
 
 function frame(content) {
   const d = app.data;
+  const label = d.status === 'live' && d.outbox.length ? 'Saving…' : statusText[d.status];
   return html`
     <header class="topbar">
       <a class="brand" href=${app.href({})} @click=${app.link}>Trophy</a>
-      <nav><a href=${app.href({})} @click=${app.link}>Characters</a></nav>
-      <div class="spacer"></div>
-      <span class="status ${d.status}" title=${statusText[d.status]}><span class="dot"></span><span class="label">${statusText[d.status]}</span></span>
+      <nav>${NAV.map(([view, title]) => html`<a href=${app.href({ view })} @click=${app.link}
+        class=${navView() === view ? 'active' : ''}>${title}</a>`)}</nav>
+      <span class="status ${d.status}" title=${label}><span class="dot"></span><span class="label">${label}</span></span>
       <details class="menu">
         <summary class="btn btn-ghost btn-sm">⋯</summary>
         <div class="menu-body" @click=${e => e.currentTarget.parentElement.removeAttribute('open')}>
@@ -144,8 +167,8 @@ function frame(content) {
         </div>
       </details>
     </header>
-    ${d.status === 'offline' ? html`<div class="banner">Connection lost — reconnecting. Changes can't be saved until then.</div>` : nothing}
-    <main class="container">${content}</main>
+    ${banner(d)}
+    <main class="container ${app.route().view === 'overview' ? 'wide' : ''}">${content}</main>
     <div id="toast" class="toast" hidden></div>`;
 }
 
@@ -153,7 +176,11 @@ function draw() {
   if (!cfg) return render(setupPage(), root);
   const d = app.data;
   if (!d.ready) {
-    render(frame(html`<div class="empty"><p class="big">${statusText[d.status]}</p></div>`), root);
+    render(frame(html`<div class="empty connecting">
+      <p class="big">${statusText[d.status]}</p>
+      ${d.problem ? html`<p class="problem">${d.problem}</p>` : nothing}
+      ${d.status !== 'outdated' && d.problem ? html`<button class="btn btn-sm" @click=${() => d.retry()}>Retry now</button>` : nothing}
+    </div>`), root);
   } else {
     render(frame(page()), root);
   }
@@ -176,6 +203,7 @@ function setupPage() {
 installKeys();
 if (cfg) {
   app.data = new Data(cfg);
+  app.data.notice = toast;
   app.data.subscribe(() => app.render());
 }
 draw();

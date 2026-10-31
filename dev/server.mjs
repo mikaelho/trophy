@@ -5,7 +5,10 @@
 //   cd dev && npm install && node server.mjs
 //   open http://localhost:8787/?relay=localhost:8787&room=test#key=dev
 //
-// Options: --port N, --secret S (default "dev"), --memory, --seed path/to/dump.json
+// Options: --port N, --secret S (default "dev"), --memory, --seed path/to/dump.json,
+//   --chaos  enables http://localhost:PORT/__chaos?do=drop|freeze for testing bad connections:
+//            drop = cut every connection abruptly; freeze = existing connections go silent in
+//            both directions without closing (like a phone that lost its network).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,8 +37,28 @@ function room(name) {
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
   '.md': 'text/markdown; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webmanifest': 'application/manifest+json' };
+const chaos = process.argv.includes('--chaos');
+const sockets = new Set(); // { ws, frozen }
+const PROTOCOL = (await import('../worker/src/schema.mjs')).PROTOCOL;
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'X-Relay-Key' };
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
+  if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
+  if (url.pathname === '/check') { // same answer as the worker's /check
+    const k = req.headers['x-relay-key'];
+    const key = k == null ? 'missing' : unb64(k) === secret ? 'ok' : 'wrong';
+    res.writeHead(200, { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    return res.end(JSON.stringify({ service: 'trophy-relay', protocol: PROTOCOL, key }));
+  }
+  if (chaos && url.pathname === '/__chaos') {
+    const what = url.searchParams.get('do');
+    for (const s of sockets) {
+      if (what === 'drop') s.ws.terminate();
+      if (what === 'freeze') s.frozen = true;
+    }
+    res.writeHead(200); return res.end(`${what}: ${sockets.size} connections`);
+  }
   let file = path.join(webRoot, decodeURIComponent(url.pathname));
   if (!file.startsWith(webRoot)) { res.writeHead(403); return res.end(); }
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
@@ -57,10 +80,14 @@ server.on('upgrade', (req, socket, head) => {
   }
   wss.handleUpgrade(req, socket, head, ws => {
     const core = room(name);
-    core.attach(ws);
-    ws.on('message', (data, isBinary) => core.message(ws, isBinary ? data : data.toString()));
-    ws.on('close', () => core.detach(ws));
-    ws.on('error', () => core.detach(ws));
+    // The room talks to this wrapper, so --chaos can silence a connection without closing it.
+    const s = { ws, frozen: false };
+    const conn = { send: t => { if (!s.frozen) ws.send(t); }, close: (c, r) => ws.close(c, r) };
+    sockets.add(s);
+    core.attach(conn);
+    ws.on('message', (data, isBinary) => { if (!s.frozen) core.message(conn, isBinary ? data : data.toString()); });
+    const bye = () => { sockets.delete(s); core.detach(conn); };
+    ws.on('close', bye); ws.on('error', bye);
   });
 });
 

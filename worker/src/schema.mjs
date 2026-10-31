@@ -4,6 +4,10 @@
 
 export const SCHEMA_VERSION = 1;
 
+// Version of the browser <-> room protocol. The page (docs/js/data.js) has the same number;
+// when they differ the page asks to be reloaded (or the worker to be redeployed).
+export const PROTOCOL = 2;
+
 // Sheet rules (same constants as trophy/models.py)
 export const FREE_POWERS = 3;
 export const FREE_SKILLS = 4;
@@ -80,5 +84,8 @@ export const DDL = [
   `CREATE TABLE IF NOT EXISTS "trophy_overview" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT)`,
   ...['power', 'skill', 'householdmember', 'foundequipment', 'combatitem', 'backpackitem'].map(m =>
     `CREATE INDEX IF NOT EXISTS "trophy_${m}_character_id_idx" ON "trophy_${m}" ("character_id")`),
+  // Not part of the Django schema: room bookkeeping.
   `CREATE TABLE IF NOT EXISTS "trophy_meta" ("key" text NOT NULL PRIMARY KEY, "value" text NOT NULL)`,
+  // Ids of recently applied operations, so an operation resent after a lost reply is not applied twice.
+  `CREATE TABLE IF NOT EXISTS "trophy_applied" ("oid" text NOT NULL PRIMARY KEY, "at" integer NOT NULL, "result" text NOT NULL)`,
 ];

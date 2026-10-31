@@ -14,7 +14,11 @@ The Free Cloudflare plan is enough.
 1. Install Node.js, then in this folder: `npm install -g wrangler` and `wrangler login`
 2. Choose a secret and store it in Cloudflare, not in git: `wrangler secret put RELAY_SECRET`
 3. `wrangler deploy` – it prints the relay address, like `trophy-relay.<your-name>.workers.dev`
-4. Open the game with the relay address, a room name and the secret:
+4. Check it from the command line (reads only, changes nothing):
+   `node ../dev/check-relay.mjs trophy-relay.<your-name>.workers.dev 'YOUR-SECRET' campaign1`
+   It checks the address, the secret, the version, the live connection, the game data and
+   round-trip times, and says what to fix if something is wrong. Worth running before a session.
+5. Open the game with the relay address, a room name and the secret:
    `https://<you>.github.io/trophy/?relay=trophy-relay.<your-name>.workers.dev&room=campaign1#key=YOUR-SECRET`
 
 Each room name is a separate game with its own database. The page remembers the relay
@@ -29,8 +33,33 @@ settings, so after the first visit the plain page address works on that device.
   storage, restorable with the `getBookmarkForTime()` / `onNextSessionRestoreBookmark()`
   storage API if ever needed.
 
+## Keeping connections reliable
+
+- **Hibernation.** Rooms use Cloudflare's WebSocket Hibernation API: between messages the room
+  can be unloaded while connections stay open, so an idle room (a tab left open for days)
+  uses no duration and cannot run down the free plan's daily allowance. Pings are answered by
+  Cloudflare itself without waking the room. What the room knows about each connection
+  (peer id, held field locks) is stored with the connection and restored on wake-up; change
+  numbering is stored in the database.
+- **Dead connections.** Browsers ping every 5 s. The room closes connections silent for 70 s
+  and frees their field locks; while locks are held, an alarm checks every 30 s.
+- **No double edits.** Every operation carries a unique id. If a reply is lost and the browser
+  resends the operation after reconnecting, the room returns the original result without
+  applying it again (ids are remembered for two days, in the `trophy_applied` table).
+- **Versions.** The page and the relay check that they speak the same protocol version
+  (`PROTOCOL` in `src/schema.mjs` and `docs/js/data.js`); on a mismatch the page asks to be
+  reloaded or the worker to be redeployed. Deploy the worker and publish `docs/` together.
+- **/check.** `GET /check` with header `X-Relay-Key` (base64url of the secret) reports whether
+  the secret is right and the protocol version. The page uses it to explain connection
+  problems in plain words; `dev/check-relay.mjs` uses it too.
+
 ## Limits
 
 Messages from browsers are limited to 1 MB (`maxMessage` in `room-core.mjs`); a larger
-one gets an error reply instead of closing the connection. Connections silent for 70
-seconds are closed (browsers ping every 25 seconds), which frees their field locks.
+one gets an error reply instead of closing the connection.
+
+## Tests
+
+`node --test test/*.test.mjs` runs the database and room tests, and runs `worker.js` in a
+stand-in for the Cloudflare runtime that hibernates the room between messages. The stand-in
+follows Cloudflare's documentation; `check-relay.mjs` is the test against the real thing.

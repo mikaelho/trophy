@@ -67,28 +67,34 @@ export function characterSheet(app, id) {
 
   const key = k => `${c.id}:${k}`;
   const locked = k => data.lockedByOther(key(k));
-  const op = (name, args = {}, release) => attempt(data.op(name, { id: c.id, ...args }, release));
+  // Clicks need a live connection; on failure redraw, so e.g. a checkbox snaps back.
+  const act = p => attempt(p).finally(() => app.render());
+  const op = (name, args = {}, release) => act(data.op(name, { id: c.id, ...args }, release));
+
+  // A field's value: an edit still waiting to be sent, else the stored value.
+  const shown = field => data.pendingField(c.id, field) ?? c[field];
 
   // Leaving an edited field saves it (and frees its lock); unchanged fields just free the lock.
-  const save = (field, lockKey, stored, el, send) => {
-    if (el.value.trim() === String(stored ?? '').trim()) { data.unlock(lockKey); el.value = el.defaultValue; return; }
+  // Saves go through the outbox, so they are kept and resent if the connection is down.
+  const save = (lockKey, current, el, send) => {
+    if (el.value.trim() === String(current ?? '').trim()) { data.unlock(lockKey); el.value = el.defaultValue; return; }
     send(el.value, lockKey);
   };
-  const saveField = (field, el) => save(field, key(field), c[field], el,
-    (value, k) => op('save_field', { field, value }, k));
+  const saveField = (field, el) => save(key(field), shown(field), el,
+    (value, k) => data.edit('save_field', { id: c.id, field, value }, k));
 
   const lineInput = (field, cls = '', extra = {}) => html`
     <input class="input line-input ${cls} ${locked(field) ? 'locked-field' : ''}" data-edit
       type=${extra.type || 'text'} min=${extra.min ?? nothing} max=${extra.max ?? nothing}
       placeholder=${extra.placeholder ?? nothing} autocomplete="off"
-      .value=${editValue(c[field])} ?disabled=${locked(field)} title=${locked(field) ? LOCKED_TITLE : nothing}
+      .value=${editValue(shown(field))} ?disabled=${locked(field)} title=${locked(field) ? LOCKED_TITLE : nothing}
       @focus=${() => data.lock(key(field))} @blur=${e => saveField(field, e.target)} />`;
 
   // Markdown notes: click to edit (only when nobody else is editing), leave to save.
   const noteField = (field, rows = 2) => {
     if (app.editing === key(field)) return html`
       <textarea class="textarea" rows=${rows} data-edit data-key=${key(field)}
-        .value=${editValue(c[field])}
+        .value=${editValue(shown(field))}
         @blur=${e => { app.editing = null; saveField(field, e.target); app.render(); }}></textarea>`;
     const isLocked = locked(field);
     const start = async () => {
@@ -97,20 +103,21 @@ export function characterSheet(app, id) {
       else toast(LOCKED_TITLE + '.');
     };
     return html`<div class="note-box prose ${isLocked ? 'locked-field' : ''}" title=${isLocked ? LOCKED_TITLE : nothing}
-      @click=${start}>${c[field] ? markdown(c[field]) : html`<span class="placeholder">click to edit</span>`}</div>`;
+      @click=${start}>${shown(field) ? markdown(shown(field)) : html`<span class="placeholder">click to edit</span>`}</div>`;
   };
 
   // A row of a child list.
   const rowInput = (kind, item) => {
     const k = key(`${kind}:${item.id}`), isLocked = data.lockedByOther(k);
+    const name = data.pendingName(kind, item.id) ?? item.name;
     return html`<input class="row-input ${isLocked ? 'locked-field' : ''}" data-edit autocomplete="off"
-      .value=${editValue(item.name)} ?disabled=${isLocked} title=${isLocked ? LOCKED_TITLE : nothing}
+      .value=${editValue(name)} ?disabled=${isLocked} title=${isLocked ? LOCKED_TITLE : nothing}
       @focus=${() => data.lock(k)}
-      @blur=${e => save(null, k, item.name, e.target,
-        (value, lk) => attempt(data.op('rename_child', { kind, item: item.id, name: value }, lk)))} />`;
+      @blur=${e => save(k, name, e.target,
+        (value, lk) => data.edit('rename_child', { kind, item: item.id, name: value }, lk))} />`;
   };
   const removeBtn = (kind, item) => html`<button class="btn btn-ghost btn-xs" title="Remove"
-    @click=${() => attempt(data.op('remove_child', { kind, item: item.id }))}>&times;</button>`;
+    @click=${() => act(data.op('remove_child', { kind, item: item.id }))}>&times;</button>`;
 
   // "+ add" form: Enter adds; leaving the field with text in it adds too.
   const addForm = (kind, placeholder, withKind = false) => html`
@@ -120,7 +127,7 @@ export function characterSheet(app, id) {
         const f = e.target, input = f.elements.name, name = input.value.trim();
         if (!name) return;
         input.value = '';
-        op('add_child', { kind, name, combat_kind: withKind ? f.elements.kind.value : undefined });
+        data.edit('add_child', { id: c.id, kind, name, combat_kind: withKind ? f.elements.kind.value : undefined });
       }}
       @focusout=${e => { if (e.target.name === 'name' && e.target.value.trim()) e.currentTarget.requestSubmit(); }}>
       ${withKind ? html`<select name="kind" class="select">
@@ -147,7 +154,7 @@ export function characterSheet(app, id) {
   };
   const deleteCharacter = async () => {
     if (!confirm('Delete this character?')) return;
-    if (await attempt(data.op('delete_character', { id: c.id })) !== undefined) app.nav({});
+    if (await act(data.op('delete_character', { id: c.id })) !== undefined) app.nav({});
   };
 
   const burden = burdenOf(data, c);
@@ -157,7 +164,9 @@ export function characterSheet(app, id) {
 
   return html`
     <div class="sheet-head">
-      <a class="btn btn-ghost btn-sm" href=${app.href({})} @click=${app.link}>&larr; All characters</a>
+      ${app.route().from === 'overview'
+        ? html`<a class="btn btn-ghost btn-sm" href=${app.href({ view: 'overview' })} @click=${app.link}>&larr; Overview</a>`
+        : html`<a class="btn btn-ghost btn-sm" href=${app.href({})} @click=${app.link}>&larr; All characters</a>`}
       <div class="actions">
         <label class="check"><input type="checkbox" class="checkbox" .checked=${live(c.hireling)}
           @click=${() => op('toggle_flag', { field: 'hireling' })} /> Hireling</label>
@@ -220,9 +229,9 @@ export function characterSheet(app, id) {
           <div class="list-row center">
             ${rowInput('backpack', b)}
             <div class="stepper">
-              <button class="btn btn-ghost btn-xs" @click=${() => attempt(data.op('adjust_uses', { item: b.id, delta: -1 }))}>&minus;</button>
+              <button class="btn btn-ghost btn-xs" @click=${() => act(data.op('adjust_uses', { item: b.id, delta: -1 }))}>&minus;</button>
               <span class="count">${b.uses}</span>
-              <button class="btn btn-ghost btn-xs" @click=${() => attempt(data.op('adjust_uses', { item: b.id, delta: 1 }))}>+</button>
+              <button class="btn btn-ghost btn-xs" @click=${() => act(data.op('adjust_uses', { item: b.id, delta: 1 }))}>+</button>
             </div>
           </div>`)}</div>
       </div>
@@ -237,10 +246,10 @@ export function characterSheet(app, id) {
               ${r.kind === 'weapon' ? html`
                 <span class="hint">ammo</span>
                 ${Array.from({ length: AMMO_MAX }, (_, i) => i + 1).map(n => html`
-                  <div class="box-btn ${n <= r.ammo ? 'on' : ''}" @click=${() => attempt(data.op('set_ammo', { item: r.id, n }))}></div>`)}
+                  <div class="box-btn ${n <= r.ammo ? 'on' : ''}" @click=${() => act(data.op('set_ammo', { item: r.id, n }))}></div>`)}
               ` : html`
                 <label class="check small"><input type="checkbox" class="checkbox small" .checked=${live(r.marked)}
-                  @click=${() => attempt(data.op('toggle_marked', { item: r.id }))} /> Marked</label>`}
+                  @click=${() => act(data.op('toggle_marked', { item: r.id }))} /> Marked</label>`}
               ${removeBtn('combat', r)}
             </div>
           </div>`)}</div>
