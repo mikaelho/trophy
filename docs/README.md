@@ -7,13 +7,16 @@ keeps a full copy of the (small) data; changes go to the relay as batches of doc
 and the relay passes them to everyone, so all views stay live like the Django + alive version.
 
 All pages of the Django app are ported: Characters (list and sheet), Overview, Roller,
-Bestiary and Equipment. On the Roller, the browser whose Roll button is clicked rolls the
+Bestiary and Equipment, plus People (supporting characters). Overview, Equipment and People are the GM's pages,
+shown only in **GM mode** (⋯ menu), a setting of each browser. On the Roller, the browser whose Roll button is clicked rolls the
 dice and the relay passes the faces to everyone; Equipment rolls are each viewer's own, as before.
 
 ## Layout
 
 - `index.html`, `css/app.css` – page and styles (hand-written, matching the DaisyUI look)
-- `js/app.js` – start-up, page routing (`?view=character&id=5`), menu, export/import, theme
+- `js/app.js` – start-up, page routing (`?view=character&id=5`), menu, export/import, theme.
+  Exports are made for version control: always `trophy-<room>.json`, no time stamp inside,
+  keys sorted, so unchanged data exports to an identical file
 - `js/data.js` – the local copy of the data, the connection to the room, retries on
   simultaneous changes, the offline outbox, upgrading old data
 - `js/model/migrations.js` – the data layout, its version (`DATA_VERSION`) and how to get there
@@ -26,8 +29,11 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `js/views/overview.js` – read-only table of all characters (column groups fold per viewer)
 - `js/views/roller.js` – shared dice mat, per-character sections, roll reference
 - `js/views/bestiary.js` – shared monster boxes, with field locks like the sheet
-- `js/views/equipment.js` – 2d6 rolls on the tables in `lists/` (the file names are listed in
-  `TABLES` there, since GitHub Pages cannot list a folder)
+- `js/views/equipment.js` – 2d6 rolls on the equipment tables (GM mode)
+- `js/views/people.js` – supporting characters (GM mode): generated Look (three descriptors) and
+  Equipment (one roll on each equipment table), then freely edited; filter per viewer
+- `js/lists.js` – loads `lists/`: descriptors and the d6/d6 tables (named in `TABLES` there,
+  since GitHub Pages cannot list a folder)
 - `lists/` – copy of `trophy/lists/` (the page fetches these; GitHub Pages only serves this folder)
 - `vendor/` – third-party code, nothing loads from a CDN:
   lit-html 3.3.3 (built from the lit repo sources), marked 18.0.10, DOMPurify 3.4.14

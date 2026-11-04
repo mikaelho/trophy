@@ -7,11 +7,13 @@ import { relayConfig } from './transport.js';
 import { Data } from './data.js';
 import { installKeys, toast, attempt } from './ui.js';
 import { fromDjangoDump } from './model/migrations.js';
+import { randomDescriptor } from './lists.js';
 import { characterList, characterSheet } from './views/characters.js';
 import { overview } from './views/overview.js';
 import { roller } from './views/roller.js';
 import { bestiary } from './views/bestiary.js';
 import { equipment } from './views/equipment.js';
+import { people } from './views/people.js';
 
 const root = document.getElementById('app');
 const SAVED = 'trophy-relay';
@@ -46,6 +48,16 @@ const applyTheme = t => {
 };
 let theme = (() => { try { return localStorage.getItem(THEME) || 'auto'; } catch (_) { return 'auto'; } })();
 applyTheme(theme);
+// GM mode: shows the GM's pages (Overview, Equipment, People). A setting of this browser only.
+const GM = 'trophy-gm';
+let gm = (() => { try { return localStorage.getItem(GM) === '1'; } catch (_) { return false; } })();
+const toggleGm = () => {
+  gm = !gm;
+  try { localStorage.setItem(GM, gm ? '1' : '0'); } catch (_) {}
+  if (!gm && GM_VIEWS.has(app.route().view)) app.nav({}); else app.render();
+};
+const GM_VIEWS = new Set(['overview', 'equipment', 'people']);
+
 const cycleTheme = () => {
   theme = { auto: 'light', light: 'dark', dark: 'auto' }[theme] || 'auto';
   try { localStorage.setItem(THEME, theme); } catch (_) {}
@@ -86,26 +98,26 @@ const app = {
   },
   // One random descriptor from lists/character_descriptors.md (any section).
   async randomDescriptor() {
-    if (!app.descriptors) {
-      try {
-        const text = await (await fetch('lists/character_descriptors.md')).text();
-        app.descriptors = text.split('\n').map(s => s.trim())
-          .filter(s => s && !/^-+$/.test(s) && s !== s.toUpperCase());
-      } catch (_) { toast('Could not load the descriptor list.'); return ''; }
-    }
-    const d = app.descriptors;
-    return d.length ? d[Math.floor(Math.random() * d.length)] : '';
+    try { return await randomDescriptor(); } catch (_) { toast('Could not load the descriptor list.'); return ''; }
   },
 };
+app.isGm = () => gm;
 addEventListener('popstate', () => { app.editing = null; app.render(); });
 
 // --- export / import / backups ---------------------------------------------------------
+// Exports are meant for version control: always the same file name, no time stamp inside,
+// and object keys sorted, so exporting unchanged data gives an identical file and a diff
+// shows only what really changed.
+const sortKeys = v => Array.isArray(v) ? v.map(sortKeys)
+  : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sortKeys(v[k])])) : v;
+
 async function exportData() {
   const data = await attempt(app.data.exportData());
   if (!data) return;
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `trophy-${cfg.room}-${stamp}.json` });
+  const { exportedAt, ...rest } = data; // the relay adds a time stamp; leave it out
+  const text = JSON.stringify(sortKeys(rest), null, 2) + '\n';
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `trophy-${cfg.room}.json` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
@@ -162,16 +174,17 @@ function backupsPage() {
 function page() {
   const { view, id } = app.route();
   if (view === 'character' && id) return characterSheet(app, id);
-  if (view === 'overview') return overview(app);
+  if (view === 'overview' && gm) return overview(app);
   if (view === 'roller') return roller(app);
   if (view === 'bestiary') return bestiary(app);
-  if (view === 'equipment') return equipment(app);
+  if (view === 'people' && gm) return people(app);
+  if (view === 'equipment' && gm) return equipment(app);
   if (view === 'backups') return backupsPage();
   return characterList(app);
 }
 
-const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['equipment', 'Equipment']];
-const navView = () => { const { view } = app.route(); return view === 'character' ? '' : view; };
+const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['people', 'People'], ['equipment', 'Equipment']];
+const navView = () => { const { view } = app.route(); return view === 'character' || (GM_VIEWS.has(view) && !gm) ? '' : view; };
 
 const statusText = { connecting: 'Connecting…', upgrading: 'Upgrading the game data…', live: 'Connected', offline: 'Reconnecting…', outdated: 'Update needed' };
 
@@ -192,7 +205,7 @@ function frame(content) {
   return html`
     <header class="topbar">
       <a class="brand" href=${app.href({})} @click=${app.link}>Trophy</a>
-      <nav>${NAV.map(([view, title]) => html`<a href=${app.href({ view })} @click=${app.link}
+      <nav>${NAV.filter(([view]) => gm || !GM_VIEWS.has(view)).map(([view, title]) => html`<a href=${app.href({ view })} @click=${app.link}
         class=${navView() === view ? 'active' : ''}>${title}</a>`)}</nav>
       <span class="status ${d.status}" title=${label}><span class="dot"></span><span class="label">${label}</span></span>
       <details class="menu">
@@ -202,12 +215,13 @@ function frame(content) {
           <button class="btn btn-ghost btn-sm" @click=${importData} ?disabled=${d.status !== 'live'}>Import data…</button>
           <button class="btn btn-ghost btn-sm" @click=${() => { backups = null; app.nav({ view: 'backups' }); }} ?disabled=${d.status !== 'live'}>Backups…</button>
           <button class="btn btn-ghost btn-sm" @click=${cycleTheme}>Theme: ${theme}</button>
+          <button class="btn btn-ghost btn-sm gm-toggle" @click=${toggleGm} aria-pressed=${gm}>GM mode: ${gm ? 'on' : 'off'}</button>
           <div class="menu-note">Room: ${cfg.room}</div>
         </div>
       </details>
     </header>
     ${banner(d)}
-    <main class="container ${app.route().view === 'overview' ? 'wide' : ''}">${content}</main>
+    <main class="container ${app.route().view === 'overview' && gm ? 'wide' : ''}">${content}</main>
     <div id="toast" class="toast" hidden></div>`;
 }
 

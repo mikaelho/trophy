@@ -155,7 +155,7 @@ export function characterSheet(app, id) {
 
   return html`
     <div class="sheet-head">
-      ${app.route().from === 'overview'
+      ${app.route().from === 'overview' && app.isGm()
         ? html`<a class="btn btn-ghost btn-sm" href=${app.href({ view: 'overview' })} @click=${app.link}>&larr; Overview</a>`
         : html`<a class="btn btn-ghost btn-sm" href=${app.href({})} @click=${app.link}>&larr; All characters</a>`}
       <div class="actions">

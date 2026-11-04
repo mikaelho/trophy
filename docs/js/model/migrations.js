@@ -9,7 +9,10 @@
 //   backpack/<id>    {character, name, uses, slot, position}
 //   roller/main      {mat: [die], sections: [{id, name, dice: [die]}]}   die = {id, color, value, roll?}
 //   monster/<id>     {endurance, name, description, habits: [6 strings], defences, weakness, position, created_at}
+//   person/<id>      {name, title, location, look, equipment, description, position, created_at}
+//                    (supporting characters; equipment is one item per line)
 // `character` in child records is the character's id. created_at is an ISO time.
+// A new kind of record (like person) needs no new version: pages that don't know it ignore it.
 //
 // Changing the layout: add version N+1 to STEPS as a function from the version-N documents
 // ({key: data}) to the new ones, and raise DATA_VERSION. The first page with the new code to

@@ -251,3 +251,22 @@ test('two pages changing the same thing: the later one is refused, then recomput
   assert.deepEqual(a.childrenOf('power', id).map(p => p.name), ['P1', 'P2']);
   assert.equal(a.get('character', id).ruin, 3);
 });
+
+test('people: generated look and equipment kept, fields edited, removed', () => {
+  const { page, run } = setup();
+  const v = page();
+  const { id } = run(v, 'person_add', { look: 'Gaunt, raspy, smoky', equipment: 'Bayonet\nCloak\nBucket' });
+  const { id: id2 } = run(v, 'person_add', {});
+  assert.equal(v.get('person', id2).position, 1);
+  let p = v.get('person', id);
+  assert.equal(p.look, 'Gaunt, raspy, smoky'); assert.equal(p.equipment, 'Bayonet\nCloak\nBucket');
+  assert.deepEqual([p.name, p.title, p.location, p.description], ['', '', '', '']);
+  run(v, 'person_save', { id, field: 'name', value: '  Old Marta ' });
+  run(v, 'person_save', { id, field: 'description', value: 'Knows the **tunnels**.\nOwes Lora.' });
+  assert.throws(() => compute(v, 'person_save', { id, field: 'ruin', value: 1 }), /Unknown field/);
+  p = v.get('person', id);
+  assert.equal(p.name, 'Old Marta'); assert.equal(p.description, 'Knows the **tunnels**.\nOwes Lora.');
+  run(v, 'person_remove', { id });
+  assert.equal(v.get('person', id), null);
+  assert.throws(() => compute(v, 'person_save', { id, field: 'name', value: 'x' }), /no longer exists/);
+});

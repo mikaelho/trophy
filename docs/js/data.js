@@ -44,7 +44,7 @@ const REQUEST_TIMEOUT = 15000; // give up on a reply
 const CONFLICT_RETRIES = 6;    // recompute this many times when someone else changed the same thing
 const OUTBOX_MAX_AGE = 6 * 3600 * 1000; // queued edits older than this are dropped
 const QUEUED_OPS = new Set(['save_field', 'rename_child', 'add_child',
-  'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section']);
+  'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section', 'person_save']);
 
 const newOid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const refused = (message, extra = {}) => Object.assign(new Error(message), { refused: true }, extra);
