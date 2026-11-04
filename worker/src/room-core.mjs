@@ -8,20 +8,25 @@
 //   relay -> client  {t:'ok', id} | {t:'from', from, d} | {t:'err', type, ...} | {t:'pong'}
 //   New error type: 'too-big' (message over the size limit; the connection stays open).
 //
-// Messages inside the "db" connection (the d of {t:'data', cid, d}):
+// Messages inside the "db" connection (the d of {t:'data', cid, d}). The room is a generic
+// document store (store.mjs); the page owns the data layout, the rules and the migrations.
 //   client -> db  {t:'connect', cid, proto}            (the connection request itself)
-//                 {t:'op', rid, oid, op, args, release?}  run a write; oid = unique id of the op,
-//                                                     so a resent op is applied only once;
-//                                                     release = lock key to free after it
+//                 {t:'write', rid, oid, version, writes, result?, release?}
+//                                                    apply a batch (see store.mjs); oid = unique
+//                                                    id, so a resend is applied once; result is
+//                                                    echoed in the reply; release = lock key to free
+//                 {t:'migrate', rid, from, to, docs} upgrade: replace all documents if still at `from`
+//                 {t:'import', rid, version, docs}   replace all documents (backup kept)
+//                 {t:'export', rid}                  -> reply {result: {format, dataVersion, docs}}
+//                 {t:'backups', rid}                 -> reply {result: [{id, at, reason, dataVersion, size}]}
+//                 {t:'backup', rid, id}              -> reply {result: {dataVersion, docs}}
 //                 {t:'lock', rid, key}               take a field lock -> reply {ok}
 //                 {t:'unlock', key}                  free a field lock
 //                 {t:'resync'}                       ask for a fresh snapshot
-//                 {t:'export', rid}                  -> reply {result: dump}
-//                 {t:'import', rid, dump}            replace everything -> snapshot to all
-//   db -> client  {t:'snap', protocol, epoch, seq, tables, locks, you}
-//                 {t:'chg', epoch, seq, rows: [[model, row]], del: [[model, id]]}
+//   db -> client  {t:'snap', protocol, epoch, seq, dataVersion, docs: [[key, rev, data]], legacy?, locks, you}
+//                 {t:'chg', epoch, seq, docs: [[key, rev, data]], del: [key]}
 //                 {t:'locks', locks: {key: peerId}}
-//                 {t:'reply', rid, ok, result?, error?}
+//                 {t:'reply', rid, ok, result?, error?, code?, key?}   code: 'conflict' | 'version' | ...
 //                 {t:'version', protocol}            the page is a different version: reload it
 // `seq` increases by one with every change. A client that sees a gap asks for a resync.
 // `epoch` identifies the database; seq continues across restarts of the room.
@@ -33,8 +38,7 @@
 //   lastSeen(ws)          time of the last automatic pong to this connection, in ms
 //   locksChanged(any)     called when locks change; any = some lock is held
 
-import { OpError } from './trophy-db.mjs';
-import { PROTOCOL } from './schema.mjs';
+import { StoreError, PROTOCOL } from './store.mjs';
 
 const DB_ID = 'db';
 
@@ -130,7 +134,7 @@ export class RoomCore {
   }
 
   snapshotFor(s) {
-    return { t: 'snap', protocol: PROTOCOL, epoch: this.db.epoch, seq: this.db.seq, tables: this.db.snapshot(),
+    return { t: 'snap', protocol: PROTOCOL, epoch: this.db.epoch, seq: this.db.seq, ...this.db.snapshot(),
       locks: Object.fromEntries(this.locks), you: s.id };
   }
   // Locks changed: tell everyone, keep the holder's saved state current, let the host know.
@@ -152,13 +156,21 @@ export class RoomCore {
     if (d.t !== 'data' || d.cid !== s.dbCid || !d.d || typeof d.d !== 'object') return;
     const r = d.d, reply = o => this.toClient(ws, { t: 'reply', rid: r.rid, ...o });
     try {
-      if (r.t === 'op') {
-        const { result, changed, deleted, seq } = this.db.apply(String(r.op), r.args || {}, r.oid);
-        if (changed.length || deleted.length) {
-          this.toAll({ t: 'chg', epoch: this.db.epoch, seq, rows: changed, del: deleted });
-        }
+      if (r.t === 'write') {
+        const { result, docs, deleted, seq, duplicate } = this.db.write({ version: r.version, writes: r.writes, oid: r.oid, result: r.result ?? null });
+        if (!duplicate) this.toAll({ t: 'chg', epoch: this.db.epoch, seq, docs, del: deleted });
         if (r.release && this.locks.get(r.release) === s.id) { this.locks.delete(r.release); this.locksUpdated(ws); }
         reply({ ok: true, result });
+      } else if (r.t === 'migrate' || r.t === 'import') {
+        const migrate = r.t === 'migrate';
+        this.db.replaceAll({ docs: r.docs, dataVersion: migrate ? r.to : r.version, from: migrate ? r.from : null,
+          reason: migrate ? `before upgrade to version ${r.to}` : 'before import' });
+        for (const [w, st] of this.st) if (st.dbCid) this.toClient(w, this.snapshotFor(st));
+        reply({ ok: true, result: { count: Object.keys(r.docs).length } });
+      } else if (r.t === 'backups') {
+        reply({ ok: true, result: this.db.listBackups() });
+      } else if (r.t === 'backup') {
+        reply({ ok: true, result: this.db.getBackup(Number(r.id)) });
       } else if (r.t === 'lock') {
         const key = String(r.key || '').slice(0, 200), holder = this.locks.get(key);
         if (!key || (holder && holder !== s.id)) return reply({ ok: false, error: 'Someone is editing this.' });
@@ -169,16 +181,12 @@ export class RoomCore {
       } else if (r.t === 'resync') {
         this.toClient(ws, this.snapshotFor(s));
       } else if (r.t === 'export') {
-        reply({ ok: true, result: this.db.exportDump() });
-      } else if (r.t === 'import') {
-        const n = this.db.importDump(r.dump);
-        for (const [w, st] of this.st) if (st.dbCid) this.toClient(w, this.snapshotFor(st));
-        reply({ ok: true, result: { count: n } });
+        reply({ ok: true, result: this.db.exportAll() });
       }
     } catch (e) {
-      // Operation errors go back to the caller; anything else is a bug, logged as such.
-      if (!(e instanceof OpError)) console.error(e);
-      reply({ ok: false, error: e instanceof OpError ? e.message : 'Internal error' });
+      // Store errors go back to the caller; anything else is a bug, logged as such.
+      if (!(e instanceof StoreError)) { console.error(e); return reply({ ok: false, error: 'Internal error' }); }
+      reply({ ok: false, error: e.message, code: e.code, key: e.key, rev: e.rev, dataVersion: e.dataVersion });
     }
   }
 }

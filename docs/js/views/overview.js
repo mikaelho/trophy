@@ -2,7 +2,7 @@
 // and _fetch_overview in trophy/alive_hooks.py. Computed from the local copy of the data,
 // so it updates live like every other page.
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
-import { bySlot } from '../data.js';
+import { bySlot } from '../model/rules.js';
 import { markdown, markdownInline } from '../ui.js';
 import { burdenOf, sortedCharacters, HOARD_MAX } from './characters.js';
 
@@ -36,15 +36,15 @@ export function overview(app) {
     ['Coin · Hunt Tokens', c => `${c.coin} · ${c.hunt_tokens}`],
     ['Skills', c => list(names(kids('skill', c)))],
     ['Powers', c => list(names(kids('power', c)))],
-    ['Combat', c => list(names(kids('combatitem', c)))],
-    ['Backpack', c => list(kids('backpackitem', c, bySlot).filter(b => b.name.trim())
+    ['Combat', c => list(names(kids('combat', c)))],
+    ['Backpack', c => list(kids('backpack', c, bySlot).filter(b => b.name.trim())
       .map(b => b.uses ? `${b.name} (${b.uses})` : b.name))],
-    ['Found', c => list(names(kids('foundequipment', c)))],
+    ['Found', c => list(names(kids('found', c)))],
     ['Drive', c => md(c.drive)],
     ['Conditions', c => md(c.conditions)],
     ['Notes', c => md(c.notes)],
     ['Hoard', c => `${c.hoard} / ${HOARD_MAX}`],
-    ['Household', c => list(names(kids('householdmember', c)))],
+    ['Household', c => list(names(kids('household', c)))],
   ];
 
   const toggle = g => {

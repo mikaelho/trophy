@@ -3,13 +3,14 @@
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { repeat } from '../../vendor/lit-html/directives/repeat.js';
 import { editValue, attempt, dieSvg } from '../ui.js';
+import { compareIds } from '../model/rules.js';
 
 const HABIT_COUNT = 6;
 const LOCKED_TITLE = 'Someone is editing this';
 
 export function bestiary(app) {
   const { data } = app;
-  const monsters = data.all('monster').sort((a, b) => b.position - a.position || b.id - a.id); // newest first
+  const monsters = [...data.all('monster')].sort((a, b) => b.position - a.position || compareIds(b.id, a.id)); // newest first
   const act = (op, args) => attempt(data.op(op, args)).finally(() => app.render());
 
   const box = m => {

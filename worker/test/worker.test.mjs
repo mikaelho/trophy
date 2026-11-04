@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { PROTOCOL } from '../src/schema.mjs';
+import { PROTOCOL } from '../src/store.mjs';
 
 class WebSocketRequestResponsePair {
   constructor(request, response) { this.request = request; this.response = response; }
@@ -71,21 +71,25 @@ test('worker: a game survives hibernation between every message', async () => {
   const b = await join(ctx, room, 'bob'); hibernate();
   assert.equal(a.db()[0].t, 'snap'); assert.equal(a.db()[0].protocol, PROTOCOL);
 
-  await a.req({ t: 'op', rid: 1, oid: 'o1', op: 'new_character' }); hibernate();
-  const id = a.db().find(m => m.rid === 1).result.id;
-  assert.equal(b.db().find(m => m.t === 'chg').seq, 1);
+  await a.req({ t: 'migrate', rid: 0, from: 0, to: 1, docs: {} }); hibernate();
+  assert.equal(b.db().filter(m => m.t === 'snap').at(-1).dataVersion, 1, 'upgrade survives hibernation');
+  const put = (key, data, extra = {}) => ({ op: 'put', key, data, ...extra });
+  await a.req({ t: 'write', rid: 1, oid: 'o1', version: 1, writes: [put('character/a', { name: '', ruin: 1 })] }); hibernate();
+  const seq1 = b.db().find(m => m.t === 'chg').seq;
 
-  await a.req({ t: 'lock', rid: 2, key: `${id}:name` }); hibernate();
-  await b.req({ t: 'lock', rid: 3, key: `${id}:name` }); hibernate();
+  await a.req({ t: 'lock', rid: 2, key: 'a:name' }); hibernate();
+  await b.req({ t: 'lock', rid: 3, key: 'a:name' }); hibernate();
   assert.equal(b.db().find(m => m.rid === 3).ok, false, 'lock kept across hibernation');
   assert.ok(ctx.alarmAt, 'a sweep is scheduled while locks are held');
 
-  // the reply to this op is "lost"; the browser resends it after reconnecting
-  await a.req({ t: 'op', rid: 4, oid: 'o2', op: 'add_child', args: { id, kind: 'power', name: 'Ward' }, release: `${id}:name` });
-  hibernate();
-  await a.req({ t: 'op', rid: 5, oid: 'o2', op: 'add_child', args: { id, kind: 'power', name: 'Ward' } });
+  // the reply to this write is "lost"; the browser resends it after reconnecting
+  const w = { t: 'write', oid: 'o2', version: 1, writes: [put('power/p1', { character: 'a', name: 'Ward', position: 0 }),
+    { op: 'patch', key: 'character/a', fields: { ruin: 2 }, ifRev: 1 }], release: 'a:name' };
+  await a.req({ ...w, rid: 4 }); hibernate();
+  await a.req({ ...w, rid: 5 });
+  assert.equal(a.db().find(m => m.rid === 5).ok, true, 'the resend is accepted, not a conflict');
   const chgs = b.db().filter(m => m.t === 'chg');
-  assert.deepEqual(chgs.map(m => m.seq), [1, 2], 'numbering continues, duplicate not applied');
+  assert.deepEqual(chgs.map(m => m.seq), [seq1, seq1 + 1], 'numbering continues, duplicate not applied');
   assert.deepEqual(b.db().filter(m => m.t === 'locks').at(-1).locks, {});
 
   // pings are answered by the runtime and do not reach the room
@@ -105,9 +109,7 @@ test('worker: a dead connection holding a lock is swept by the alarm', async () 
   const room = () => current;
   const a = await join(ctx, room, 'alice');
   const b = await join(ctx, room, 'bob');
-  await a.req({ t: 'op', rid: 1, op: 'new_character' });
-  const id = a.db().find(m => m.rid === 1).result.id;
-  await b.req({ t: 'lock', rid: 2, key: `${id}:look` });
+  await b.req({ t: 'lock', rid: 2, key: 'a:look' });
   // b's phone goes to sleep: nothing more from it. a keeps pinging (answered automatically).
   const realNow = Date.now;
   try {

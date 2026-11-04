@@ -1,147 +1,204 @@
-// Tests of the game database and the room, without Cloudflare. Run: node --test worker/test
+// Tests of the generic document store and the room, without Cloudflare. Run: node --test worker/test/*.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { TrophyDB } from '../src/trophy-db.mjs';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { DocStore, PROTOCOL } from '../src/store.mjs';
 import { RoomCore } from '../src/room-core.mjs';
 import { nodeSql } from '../src/node-sql.mjs';
-import { PROTOCOL } from '../src/schema.mjs';
 
-const fresh = () => new TrophyDB(nodeSql());
+const fresh = () => new DocStore(nodeSql());
+const ready = () => { const db = fresh(); db.replaceAll({ docs: {}, dataVersion: 1, from: 0, reason: 'test' }); return db; };
+const put = (key, data, extra = {}) => ({ op: 'put', key, data, ...extra });
 
-test('new character gets six backpack slots', () => {
+// --- store -----------------------------------------------------------------------
+
+test('store: a new room is at data version 0 with no documents', () => {
   const db = fresh();
-  const { result, changed } = db.apply('new_character');
-  assert.equal(changed.filter(([m]) => m === 'backpackitem').length, 6);
-  const c = db.get('character', result.id);
-  assert.equal(c.ruin, 1); assert.equal(c.hireling, false); assert.match(c.created_at, /Z$/);
+  assert.deepEqual(db.snapshot(), { dataVersion: 0, docs: [] });
 });
 
-test('powers raise Ruin and Burden past three', () => {
-  const db = fresh();
-  const { id } = db.apply('new_character').result;
-  for (const n of ['a', 'b', 'c', 'd']) db.apply('add_child', { id, kind: 'power', name: n });
-  assert.equal(db.get('character', id).ruin, 5);
-  assert.equal(db.burdenBase(id), 2);
-  const p = db.rows('power', 'WHERE character_id = ?', id);
-  assert.deepEqual(p.map(r => r.position), [0, 1, 2, 3]);
-  db.apply('remove_child', { kind: 'power', item: p[0].id });
-  assert.equal(db.get('character', id).ruin, 4);
+test('store: batches are all or nothing and bump revisions', () => {
+  const db = ready();
+  const r = db.write({ version: 1, writes: [put('character/a', { name: 'Evian', ruin: 1 }), put('skill/x', { character: 'a', name: 'Grace' })] });
+  assert.equal(r.docs.length, 2); assert.equal(r.seq, 2);
+  db.write({ version: 1, writes: [{ op: 'patch', key: 'character/a', fields: { ruin: 2 } }] });
+  assert.deepEqual(db.getDoc('character/a'), { rev: 2, data: { name: 'Evian', ruin: 2 } });
+  // the second write fails, so the first is not applied either
+  assert.throws(() => db.write({ version: 1, writes: [
+    { op: 'patch', key: 'character/a', fields: { name: 'X' } },
+    { op: 'patch', key: 'character/nope', fields: { name: 'Y' } }] }), e => e.code === 'missing');
+  assert.equal(db.getDoc('character/a').data.name, 'Evian');
+  assert.equal(db.seq, 3);
+  const d = db.write({ version: 1, writes: [{ op: 'delete', key: 'skill/x' }] });
+  assert.deepEqual(d.deleted, ['skill/x']); assert.equal(db.getDoc('skill/x'), null);
 });
 
-test('burden adjustment keeps the offset relative to the derived value', () => {
-  const db = fresh();
-  const { id } = db.apply('new_character').result;
-  db.apply('adjust_burden', { id, delta: -1 });
-  db.apply('adjust_burden', { id, delta: -1 }); // floored at 0
-  assert.equal(db.get('character', id).burden_offset, -1);
-  db.apply('add_child', { id, kind: 'combat', name: 'Spear', combat_kind: 'weapon' });
-  assert.equal(db.burdenBase(id) + db.get('character', id).burden_offset, 1);
+test('store: a stale revision is a conflict and changes nothing', () => {
+  const db = ready();
+  db.write({ version: 1, writes: [put('roller/main', { mat: [] }, { ifRev: 0 })] });
+  assert.throws(() => db.write({ version: 1, writes: [put('roller/main', { mat: [1] }, { ifRev: 0 })] }),
+    e => e.code === 'conflict' && e.key === 'roller/main' && e.rev === 1);
+  db.write({ version: 1, writes: [put('roller/main', { mat: [1] }, { ifRev: 1 })] });
+  assert.throws(() => db.write({ version: 1, writes: [put('roller/main', { mat: [2] }, { ifRev: 1 })] }), e => e.code === 'conflict');
+  assert.deepEqual(db.getDoc('roller/main').data.mat, [1]);
 });
 
-test('field rules: trimming, clamping, ruin toggle, ammo toggle', () => {
-  const db = fresh();
-  const { id } = db.apply('new_character').result;
-  db.apply('save_field', { id, field: 'name', value: '  Evian  ' });
-  db.apply('save_field', { id, field: 'hoard', value: '99' });
-  db.apply('save_field', { id, field: 'coin', value: '-5' });
-  db.apply('set_ruin', { id, n: 3 }); db.apply('set_ruin', { id, n: 3 });
-  const c = db.get('character', id);
-  assert.equal(c.name, 'Evian'); assert.equal(c.hoard, 50); assert.equal(c.coin, 0); assert.equal(c.ruin, 2);
-  const w = db.apply('add_child', { id, kind: 'combat', name: 'Bow', combat_kind: 'weapon' }).result.id;
-  db.apply('set_ammo', { item: w, n: 2 }); db.apply('set_ammo', { item: w, n: 2 });
-  assert.equal(db.get('combatitem', w).ammo, 1);
-  assert.throws(() => db.apply('save_field', { id, field: 'ruin', value: 6 }), /Unknown field/);
+test('store: writes for another data version are refused', () => {
+  const db = ready();
+  assert.throws(() => db.write({ version: 0, writes: [put('character/a', {})] }), e => e.code === 'version' && e.dataVersion === 1);
 });
 
-test('deleting a character removes its rows', () => {
-  const db = fresh();
-  const { id } = db.apply('new_character').result;
-  db.apply('add_child', { id, kind: 'skill', name: 'Climb' });
-  const { deleted } = db.apply('delete_character', { id });
-  assert.equal(deleted.length, 8); // character + 6 backpack + 1 skill
-  assert.equal(db.rows('backpackitem').length, 0);
+test('store: a batch resent with the same id is applied once and gets the same result', () => {
+  const db = ready();
+  db.write({ version: 1, oid: 'o1', result: { id: 'a' }, writes: [{ op: 'put', key: 'character/a', data: { n: 1 } }] });
+  const again = db.write({ version: 1, oid: 'o1', result: { id: 'zzz' }, writes: [{ op: 'put', key: 'character/a', data: { n: 2 } }] });
+  assert.equal(again.duplicate, true); assert.deepEqual(again.result, { id: 'a' });
+  assert.deepEqual(db.getDoc('character/a'), { rev: 1, data: { n: 1 } });
+  // a refused batch is not remembered, so the same id can be retried
+  assert.throws(() => db.write({ version: 1, oid: 'o2', writes: [put('character/a', {}, { ifRev: 7 })] }));
+  db.write({ version: 1, oid: 'o2', writes: [put('character/a', { n: 3 }, { ifRev: 1 })] });
+  assert.equal(db.getDoc('character/a').data.n, 3);
 });
 
-test('the existing Django dump round-trips', () => {
-  const dump = JSON.parse(readFileSync(new URL('../../trophy-db.json', import.meta.url), 'utf8'));
-  const db = fresh();
-  const n = db.importDump(dump);
-  const trophy = dump.filter(x => x.model.startsWith('trophy.'));
-  assert.equal(n, trophy.length);
-  const back = db.exportDump();
-  const key = x => x.model + ':' + x.pk;
-  const orig = new Map(trophy.map(x => [key(x), x]));
-  assert.equal(back.length, trophy.length);
-  for (const x of back) assert.deepEqual(x.fields, orig.get(key(x)).fields, key(x));
-  // ids continue after the imported ones
-  const { id } = db.apply('new_character').result;
-  assert.ok(id > Math.max(...trophy.filter(x => x.model === 'trophy.character').map(x => x.pk)));
+test('store: bad input is refused', () => {
+  const db = ready();
+  for (const key of ['', 'Character/a', 'character', 'character/', 'a/b/c', 'character/a b', 'x'.repeat(40) + '/a']) {
+    assert.throws(() => db.write({ version: 1, writes: [put(key, {})] }), /key/, key);
+  }
+  assert.throws(() => db.write({ version: 1, writes: [put('character/a', [1])] }), /object/);
+  assert.throws(() => db.write({ version: 1, writes: [put('character/a', { t: 'x'.repeat(300000) })] }), /too large/);
+  assert.throws(() => db.write({ version: 1, writes: [] }), /Nothing/);
 });
 
-test('a bad import changes nothing', () => {
-  const db = fresh();
-  db.apply('new_character');
-  assert.throws(() => db.importDump([{ model: 'trophy.character', pk: 1, fields: { ruin: -3 } }]));
-  assert.equal(db.rows('character').length, 1);
-  assert.throws(() => db.importDump({}), /not a database dump/);
+test('store: migrate replaces everything once, keeps a backup, and loses a race cleanly', () => {
+  const db = ready();
+  db.write({ version: 1, writes: [put('character/a', { name: 'Old' })] });
+  db.replaceAll({ docs: { 'character/a': { name: 'New', extra: true } }, dataVersion: 2, from: 1, reason: 'before upgrade to version 2' });
+  assert.equal(db.dataVersion, 2);
+  assert.deepEqual(db.getDoc('character/a'), { rev: 1, data: { name: 'New', extra: true } });
+  assert.throws(() => db.replaceAll({ docs: {}, dataVersion: 2, from: 1, reason: 'x' }), e => e.code === 'version');
+  const [b] = db.listBackups();
+  assert.equal(b.dataVersion, 1); assert.match(b.reason, /upgrade/);
+  assert.deepEqual(db.getBackup(b.id).docs, { 'character/a': { name: 'Old' } });
 });
 
-// --- room ---------------------------------------------------------------------
+test('store: only the last 10 backups are kept', () => {
+  const db = ready();
+  for (let i = 0; i < 13; i++) {
+    db.write({ version: db.dataVersion, writes: [put('character/a', { i })] });
+    db.replaceAll({ docs: { 'character/a': { i } }, dataVersion: 1, reason: 'before import' });
+  }
+  assert.equal(db.listBackups().length, 10);
+});
+
+test('store: version, numbering and documents survive a restart', () => {
+  const file = mkdtempSync(tmpdir() + '/trophy-') + '/db.sqlite';
+  const db1 = new DocStore(nodeSql(file));
+  db1.replaceAll({ docs: { 'character/a': { n: 1 } }, dataVersion: 1, from: 0, reason: 'x' });
+  db1.write({ version: 1, writes: [put('character/b', {})] });
+  const db2 = new DocStore(nodeSql(file));
+  assert.equal(db2.dataVersion, 1); assert.equal(db2.seq, db1.seq); assert.equal(db2.epoch, db1.epoch);
+  assert.equal(db2.allDocs().length, 2);
+});
+
+test('store: tables of the previous relay version are handed over while at version 0, never changed', () => {
+  const sql = nodeSql();
+  sql.all(`CREATE TABLE trophy_character (id integer PRIMARY KEY, name text)`);
+  sql.all(`INSERT INTO trophy_character (id, name) VALUES (5, 'Lora')`);
+  sql.all(`CREATE TABLE _cf_KV (key text, value blob)`); // Cloudflare's own table: not handed over
+  const db = new DocStore(sql);
+  assert.deepEqual(db.snapshot().legacy, { trophy_character: [{ id: 5, name: 'Lora' }] });
+  db.replaceAll({ docs: { 'character/5': { name: 'Lora' } }, dataVersion: 1, from: 0, reason: 'x' });
+  assert.equal(db.snapshot().legacy, undefined);
+  assert.equal(db.listBackups().length, 0); // nothing in docs yet, so nothing to back up
+  assert.deepEqual(sql.all(`SELECT * FROM trophy_character`).map(r => ({ ...r })), [{ id: 5, name: 'Lora' }]);
+});
+
+// --- room ------------------------------------------------------------------------
 
 class FakeWs {
   constructor() { this.sent = []; this.closed = null; }
   send(t) { this.sent.push(JSON.parse(t)); }
   close(code) { this.closed = code; }
-  // messages from the db peer, unwrapped
   db() { return this.sent.filter(m => m.t === 'from' && m.from === 'db' && m.d.t === 'data').map(m => m.d.d); }
 }
 
-function join(room, id) {
+function join(room, id, proto = PROTOCOL) {
   const ws = new FakeWs();
   room.attach(ws);
   room.message(ws, JSON.stringify({ t: 'hi', id }));
-  room.message(ws, JSON.stringify({ t: 'to', to: 'db', d: { t: 'connect', cid: 'c-' + id, proto: PROTOCOL } }));
+  room.message(ws, JSON.stringify({ t: 'to', to: 'db', d: { t: 'connect', cid: 'c-' + id, proto } }));
   ws.req = d => room.message(ws, JSON.stringify({ t: 'to', to: 'db', d: { t: 'data', cid: 'c-' + id, d } }));
   return ws;
 }
 
-test('room: snapshot, broadcast, replies', () => {
+test('room: snapshot, broadcast, replies, errors with codes', () => {
+  const room = new RoomCore({ db: ready() });
+  const a = join(room, 'alice'), b = join(room, 'bob');
+  const snap = a.db()[0];
+  assert.equal(snap.t, 'snap'); assert.equal(snap.you, 'alice'); assert.equal(snap.dataVersion, 1); assert.equal(snap.protocol, PROTOCOL);
+  a.req({ t: 'write', rid: 1, oid: 'x1', version: 1, result: { id: 'a' }, writes: [put('character/a', { name: 'E' })] });
+  const chg = b.db().find(m => m.t === 'chg');
+  assert.deepEqual(chg.docs, [['character/a', 1, { name: 'E' }]]); assert.equal(chg.seq, 2);
+  assert.deepEqual(a.db().find(m => m.rid === 1), { t: 'reply', rid: 1, ok: true, result: { id: 'a' } });
+  const order = a.db().map(m => m.t);
+  assert.ok(order.indexOf('chg') < order.indexOf('reply'), 'the change arrives before the reply');
+  a.req({ t: 'write', rid: 2, version: 1, writes: [put('character/a', {}, { ifRev: 0 })] });
+  const r2 = a.db().find(m => m.rid === 2);
+  assert.equal(r2.ok, false); assert.equal(r2.code, 'conflict'); assert.equal(r2.key, 'character/a'); assert.equal(r2.rev, 1);
+  // a duplicate resend is answered but not broadcast again
+  const before = b.db().length;
+  a.req({ t: 'write', rid: 3, oid: 'x1', version: 1, writes: [put('character/a', { name: 'E' })] });
+  assert.equal(b.db().length, before);
+  assert.deepEqual(a.db().find(m => m.rid === 3).result, { id: 'a' });
+});
+
+test('room: migrate from version 0 reaches everyone as a fresh snapshot; a second migrate loses', () => {
   const room = new RoomCore({ db: fresh() });
   const a = join(room, 'alice'), b = join(room, 'bob');
-  assert.equal(a.db()[0].t, 'snap'); assert.equal(a.db()[0].you, 'alice');
-  a.req({ t: 'op', rid: 1, op: 'new_character' });
-  const chg = b.db().find(m => m.t === 'chg');
-  assert.equal(chg.seq, 1); assert.equal(chg.rows.length, 7);
-  const rep = a.db().find(m => m.t === 'reply');
-  assert.equal(rep.ok, true); assert.ok(rep.result.id);
-  // the change arrives before the reply, so the store is up to date when the reply resolves
-  const order = a.db().map(m => m.t);
-  assert.ok(order.indexOf('chg') < order.indexOf('reply'));
-  a.req({ t: 'op', rid: 2, op: 'nope' });
-  assert.equal(a.db().at(-1).ok, false); assert.match(a.db().at(-1).error, /Unknown operation/);
+  a.req({ t: 'migrate', rid: 1, from: 0, to: 1, docs: { 'character/a': { name: 'Lora' } } });
+  b.req({ t: 'migrate', rid: 2, from: 0, to: 1, docs: { 'character/a': { name: 'Other' } } });
+  assert.equal(a.db().find(m => m.rid === 1).ok, true);
+  const lost = b.db().find(m => m.rid === 2);
+  assert.equal(lost.ok, false); assert.equal(lost.code, 'version');
+  const snap = b.db().filter(m => m.t === 'snap').at(-1);
+  assert.equal(snap.dataVersion, 1); assert.deepEqual(snap.docs, [['character/a', 1, { name: 'Lora' }]]);
+});
+
+test('room: export, import, backups', () => {
+  const room = new RoomCore({ db: ready() });
+  const a = join(room, 'alice');
+  a.req({ t: 'write', rid: 1, version: 1, writes: [put('monster/m', { name: 'Kulpsis' })] });
+  a.req({ t: 'export', rid: 2 });
+  const exp = a.db().find(m => m.rid === 2).result;
+  assert.equal(exp.format, 'trophy-docs'); assert.deepEqual(exp.docs, { 'monster/m': { name: 'Kulpsis' } });
+  a.req({ t: 'import', rid: 3, version: 1, docs: { 'monster/n': { name: 'Tentacrow' } } });
+  assert.deepEqual(a.db().filter(m => m.t === 'snap').at(-1).docs, [['monster/n', 1, { name: 'Tentacrow' }]]);
+  a.req({ t: 'backups', rid: 4 });
+  const [b] = a.db().find(m => m.rid === 4).result;
+  a.req({ t: 'backup', rid: 5, id: b.id });
+  assert.deepEqual(a.db().find(m => m.rid === 5).result.docs, { 'monster/m': { name: 'Kulpsis' } });
 });
 
 test('room: locks are exclusive and freed on save and on disconnect', () => {
-  const room = new RoomCore({ db: fresh() });
+  const room = new RoomCore({ db: ready() });
   const a = join(room, 'alice'), b = join(room, 'bob');
-  a.req({ t: 'op', rid: 1, op: 'new_character' });
-  const id = a.db().find(m => m.t === 'reply').result.id;
-  a.req({ t: 'lock', rid: 2, key: `${id}:name` });
-  b.req({ t: 'lock', rid: 3, key: `${id}:name` });
-  assert.equal(a.db().find(m => m.rid === 2).ok, true);
-  assert.equal(b.db().find(m => m.rid === 3).ok, false);
-  assert.deepEqual(b.db().filter(m => m.t === 'locks').at(-1).locks, { [`${id}:name`]: 'alice' });
-  a.req({ t: 'op', rid: 4, op: 'save_field', args: { id, field: 'name', value: 'X' }, release: `${id}:name` });
+  a.req({ t: 'lock', rid: 1, key: 'a:name' });
+  b.req({ t: 'lock', rid: 2, key: 'a:name' });
+  assert.equal(a.db().find(m => m.rid === 1).ok, true);
+  assert.equal(b.db().find(m => m.rid === 2).ok, false);
+  assert.deepEqual(b.db().filter(m => m.t === 'locks').at(-1).locks, { 'a:name': 'alice' });
+  a.req({ t: 'write', rid: 3, version: 1, writes: [put('character/a', { name: 'X' })], release: 'a:name' });
   assert.deepEqual(b.db().filter(m => m.t === 'locks').at(-1).locks, {});
-  b.req({ t: 'lock', rid: 5, key: `${id}:look` });
+  b.req({ t: 'lock', rid: 4, key: 'a:look' });
   room.detach(b);
   assert.deepEqual(a.db().filter(m => m.t === 'locks').at(-1).locks, {});
 });
 
 test('room: stale sockets are closed, oversized messages get an error', () => {
   let t = 0;
-  const room = new RoomCore({ db: fresh(), now: () => t, maxMessage: 100 });
+  const room = new RoomCore({ db: ready(), now: () => t, maxMessage: 100 });
   const a = join(room, 'alice'), b = join(room, 'bob');
   t = 60_000; room.message(a, '{"t":"ping"}');
   t = 100_000; room.message(a, '{"t":"ping"}');
@@ -151,7 +208,7 @@ test('room: stale sockets are closed, oversized messages get an error', () => {
 });
 
 test('room: plain relay still works and "db" is reserved', () => {
-  const room = new RoomCore({ db: fresh() });
+  const room = new RoomCore({ db: ready() });
   const a = join(room, 'alice'), b = join(room, 'bob');
   room.message(a, JSON.stringify({ t: 'bc', d: { hello: 1 } }));
   assert.deepEqual(b.sent.at(-1), { t: 'from', from: 'alice', d: { hello: 1 } });
@@ -159,149 +216,38 @@ test('room: plain relay still works and "db" is reserved', () => {
   assert.equal(c.sent[0].type, 'bad-id');
 });
 
-test('room: import sends a fresh snapshot to everyone', () => {
-  const room = new RoomCore({ db: fresh() });
-  const a = join(room, 'alice'), b = join(room, 'bob');
-  a.req({ t: 'import', rid: 1, dump: [{ model: 'trophy.character', pk: 3, fields: { name: 'Lora' } }] });
-  const snap = b.db().filter(m => m.t === 'snap').at(-1);
-  assert.equal(snap.tables.character[0].name, 'Lora');
-  assert.equal(snap.seq, 1);
-});
-
-test('an op resent with the same id is applied once and gets the same result', () => {
-  const db = fresh();
-  const a = db.apply('new_character', {}, 'op-1');
-  const b = db.apply('new_character', {}, 'op-1');
-  assert.equal(b.duplicate, true); assert.deepEqual(b.result, a.result);
-  assert.equal(db.rows('character').length, 1);
-  assert.equal(db.seq, 1);
-  const { id } = a.result;
-  db.apply('add_child', { id, kind: 'power', name: 'Ward' }, 'op-2');
-  db.apply('add_child', { id, kind: 'power', name: 'Ward' }, 'op-2');
-  assert.equal(db.rows('power').length, 1);
-  assert.equal(db.get('character', id).ruin, 2);
-});
-
-test('a failing op changes nothing and does not count', () => {
-  const db = fresh();
-  const { id } = db.apply('new_character').result;
-  assert.throws(() => db.apply('save_field', { id, field: 'bogus', value: 1 }, 'op-x'));
-  assert.equal(db.seq, 1);
-  assert.throws(() => db.apply('save_field', { id, field: 'bogus', value: 1 }, 'op-x')); // not remembered
-});
-
-test('change numbering and epoch survive a restart of the room', async () => {
-  const { mkdtempSync } = await import('node:fs');
-  const { tmpdir } = await import('node:os');
-  const file = mkdtempSync(tmpdir() + '/trophy-') + '/db.sqlite';
-  const db1 = new TrophyDB(nodeSql(file));
-  db1.apply('new_character'); db1.apply('new_character');
-  const db2 = new TrophyDB(nodeSql(file));
-  assert.equal(db2.seq, 2); assert.equal(db2.epoch, db1.epoch);
-});
-
-test('room: an old page is told to reload', () => {
-  const room = new RoomCore({ db: fresh() });
-  const ws = new FakeWs(); room.attach(ws);
-  room.message(ws, JSON.stringify({ t: 'hi', id: 'old' }));
-  room.message(ws, JSON.stringify({ t: 'to', to: 'db', d: { t: 'connect', cid: 'c' } }));
+test('room: a page of another protocol version is told to reload', () => {
+  const room = new RoomCore({ db: ready() });
+  const ws = join(room, 'old', 2);
   assert.deepEqual(ws.db(), [{ t: 'version', protocol: PROTOCOL }]);
 });
 
 test('room: rebuilt from saved connection state keeps peers, connections and locks', () => {
   const saved = new Map();
   const hooks = { save: (ws, s) => saved.set(ws, structuredClone(s)) };
-  const db = fresh();
+  const db = ready();
   let room = new RoomCore({ db, hooks });
   const a = join(room, 'alice'), b = join(room, 'bob');
-  a.req({ t: 'op', rid: 1, op: 'new_character' });
-  const id = a.db().find(m => m.t === 'reply').result.id;
-  a.req({ t: 'lock', rid: 2, key: `${id}:name` });
-  // the room is unloaded and built again, as after hibernation
-  room = new RoomCore({ db, hooks });
+  a.req({ t: 'lock', rid: 1, key: 'a:name' });
+  room = new RoomCore({ db, hooks }); // unloaded and built again, as after hibernation
   for (const ws of [a, b]) room.restore(ws, saved.get(ws));
-  b.req = d => room.message(b, JSON.stringify({ t: 'to', to: 'db', d: { t: 'data', cid: 'c-bob', d } }));
-  a.req = d => room.message(a, JSON.stringify({ t: 'to', to: 'db', d: { t: 'data', cid: 'c-alice', d } }));
-  b.req({ t: 'lock', rid: 3, key: `${id}:name` });
-  assert.equal(b.db().find(m => m.rid === 3).ok, false);
-  a.req({ t: 'op', rid: 4, op: 'save_field', args: { id, field: 'name', value: 'Z' }, release: `${id}:name` });
-  const chg = b.db().filter(m => m.t === 'chg').at(-1);
-  assert.equal(chg.seq, 2); // continues: no resync needed
+  const req = (ws, id) => d => room.message(ws, JSON.stringify({ t: 'to', to: 'db', d: { t: 'data', cid: 'c-' + id, d } }));
+  b.req = req(b, 'bob'); a.req = req(a, 'alice');
+  b.req({ t: 'lock', rid: 2, key: 'a:name' });
+  assert.equal(b.db().find(m => m.rid === 2).ok, false);
+  a.req({ t: 'write', rid: 3, version: 1, writes: [put('character/a', {})], release: 'a:name' });
+  assert.equal(b.db().filter(m => m.t === 'chg').at(-1).seq, 2); // numbering continues
   assert.deepEqual(b.db().filter(m => m.t === 'locks').at(-1).locks, {});
-  room.message(a, JSON.stringify({ t: 'bc', d: 'hello' }));
-  assert.deepEqual(b.sent.at(-1), { t: 'from', from: 'alice', d: 'hello' });
 });
 
 test('room: automatic pongs count as signs of life', () => {
   let t = 0;
   const auto = new Map();
-  const room = new RoomCore({ db: fresh(), now: () => t, hooks: { lastSeen: ws => auto.get(ws) || 0 } });
+  const room = new RoomCore({ db: ready(), now: () => t, hooks: { lastSeen: ws => auto.get(ws) || 0 } });
   const a = join(room, 'alice'), b = join(room, 'bob');
-  t = 100_000; auto.set(b, 95_000);       // b only pinged (answered without the room)
+  t = 100_000; auto.set(b, 95_000);
   room.message(a, '{"t":"bc","d":1}');
   assert.equal(b.closed, null);
   t = 200_000; room.message(a, '{"t":"bc","d":2}');
   assert.equal(b.closed, 1001);
-});
-
-test('roller: dice are added, rolled with the faces the browser sends, cleared; sections keep names', () => {
-  const db = fresh();
-  db.apply('roller_add_die', { color: 'light' });
-  db.apply('roller_add_die', { color: 'dark' });
-  assert.throws(() => db.apply('roller_add_die', { color: 'red' }), /colour/);
-  let [l, d] = db.get('roller', 1).mat;
-  db.apply('roller_roll', { values: { [l.id]: 6, [d.id]: 2 } });
-  let r = db.get('roller', 1);
-  assert.deepEqual(r.mat.map(x => [x.value, x.roll]), [[6, 1], [2, 1]]);
-  db.apply('roller_roll', { values: { [l.id]: 6, [d.id]: 2 } });
-  assert.deepEqual(db.get('roller', 1).mat.map(x => x.roll), [2, 2]); // same faces, still a new roll
-  const { id: sid } = db.apply('roller_add_section', { name: ' Evian ' }).result;
-  db.apply('roller_section_add_die', { sid, color: 'dark' });
-  const die = db.get('roller', 1).sections[0].dice[0];
-  db.apply('roller_section_roll', { sid, values: { [die.id]: 4 } });
-  db.apply('roller_rename_section', { sid, name: 'Lora' });
-  r = db.get('roller', 1);
-  assert.equal(r.sections[0].name, 'Lora'); assert.equal(r.sections[0].dice[0].value, 4);
-  db.apply('roller_clear'); db.apply('roller_clear_sections');
-  r = db.get('roller', 1);
-  assert.deepEqual(r.mat, []); assert.deepEqual(r.sections[0].dice, []); assert.equal(r.sections[0].name, 'Lora');
-  db.apply('roller_remove_section', { sid });
-  assert.deepEqual(db.get('roller', 1).sections, []);
-});
-
-test('roller: only faces 1-6 are accepted; a die added meanwhile is left as it was', () => {
-  const db = fresh();
-  db.apply('roller_add_die', { color: 'light' });
-  const [a] = db.get('roller', 1).mat;
-  for (const bad of [0, 7, 2.5, '3', null]) {
-    assert.throws(() => db.apply('roller_roll', { values: { [a.id]: bad } }), /1 to 6/);
-  }
-  assert.throws(() => db.apply('roller_roll', {}), /No dice values/);
-  db.apply('roller_add_die', { color: 'dark' }); // someone adds a die after the roller looked
-  db.apply('roller_roll', { values: { [a.id]: 5 } });
-  assert.deepEqual(db.get('roller', 1).mat.map(x => x.value), [5, null]);
-});
-
-test('bestiary: add, edit, habits, remove; existing dump data works', () => {
-  const db = fresh();
-  const { id } = db.apply('monster_add').result;
-  const { id: id2 } = db.apply('monster_add').result;
-  assert.equal(db.get('monster', id2).position, 1);
-  db.apply('monster_save', { id, field: 'name', value: '  Kulpsis ' });
-  db.apply('monster_save', { id, field: 'endurance', value: '-3' });
-  db.apply('monster_save_habit', { id, n: 3, value: 'Lurks' });
-  assert.throws(() => db.apply('monster_save_habit', { id, n: 7, value: 'x' }));
-  const m = db.get('monster', id);
-  assert.equal(m.name, 'Kulpsis'); assert.equal(m.endurance, 0);
-  assert.deepEqual(m.habits, ['', '', 'Lurks', '', '', '']);
-  db.apply('monster_remove', { id });
-  assert.equal(db.get('monster', id), null);
-  // the Django dump's roller and monsters load and stay editable
-  const dump = JSON.parse(readFileSync(new URL('../../trophy-db.json', import.meta.url), 'utf8'));
-  db.importDump(dump);
-  db.apply('roller_add_die', { color: 'dark' });
-  assert.equal(db.get('roller', 1).sections.length, 2);
-  const mid = db.rows('monster')[0].id;
-  db.apply('monster_save_habit', { id: mid, n: 1, value: 'Hunts in packs' });
-  assert.equal(db.get('monster', mid).habits[0], 'Hunts in packs');
 });

@@ -1,6 +1,7 @@
 // Cloudflare Worker + Durable Object for Trophy: one Durable Object per game room, holding
 // the game database in its built-in SQLite storage and relaying messages between players.
-// Based on the VoD relay; the room logic is in room-core.mjs and the database in trophy-db.mjs.
+// Based on the VoD relay; the room logic is in room-core.mjs and the generic document store in
+// store.mjs. Nothing here knows about Trophy: the page owns the data layout and the rules.
 //
 // Anyone connecting must present the shared secret (RELAY_SECRET), sent in the WebSocket
 // subprotocol list as "k.<base64url of the secret>" so it stays out of URLs and logs.
@@ -14,8 +15,7 @@
 // reachable, whether the secret is right and which protocol version it runs; the page uses
 // it to explain connection problems, and so does dev/check-relay.mjs.
 import { RoomCore } from './room-core.mjs';
-import { TrophyDB } from './trophy-db.mjs';
-import { PROTOCOL } from './schema.mjs';
+import { DocStore, PROTOCOL } from './store.mjs';
 
 const PING = '{"t":"ping"}', PONG = '{"t":"pong"}';
 const SWEEP_MS = 30_000; // while field locks are held, look for dead connections this often
@@ -59,7 +59,7 @@ export class Room {
       transaction: fn => ctx.storage.transactionSync(fn),
     };
     this.core = new RoomCore({
-      db: new TrophyDB(sql),
+      db: new DocStore(sql),
       hooks: {
         save: (ws, state) => { try { ws.serializeAttachment(state); } catch (_) {} },
         lastSeen: ws => { try { return ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() || 0; } catch (_) { return 0; } },

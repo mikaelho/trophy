@@ -1,4 +1,4 @@
-// The `sql` adapter of TrophyDB on top of Node's built-in SQLite (node:sqlite), for tests
+// The `sql` adapter of the document store on top of Node's built-in SQLite (node:sqlite), for tests
 // and the local dev server. Path ':memory:' gives a throwaway database.
 import { DatabaseSync } from 'node:sqlite';
 

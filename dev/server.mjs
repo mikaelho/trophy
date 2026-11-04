@@ -5,7 +5,7 @@
 //   cd dev && npm install && node server.mjs
 //   open http://localhost:8787/?relay=localhost:8787&room=test#key=dev
 //
-// Options: --port N, --secret S (default "dev"), --memory, --seed path/to/dump.json,
+// Options: --port N, --secret S (default "dev"), --memory, --seed path/to/django-dump.json,
 //   --chaos  enables http://localhost:PORT/__chaos?do=drop|freeze for testing bad connections:
 //            drop = cut every connection abruptly; freeze = existing connections go silent in
 //            both directions without closing (like a phone that lost its network).
@@ -15,7 +15,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { RoomCore } from '../worker/src/room-core.mjs';
-import { TrophyDB } from '../worker/src/trophy-db.mjs';
+import { DocStore, PROTOCOL } from '../worker/src/store.mjs';
+import { fromDjangoDump, DATA_VERSION } from '../docs/js/model/migrations.js';
 import { nodeSql } from '../worker/src/node-sql.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -27,8 +28,11 @@ const memory = process.argv.includes('--memory'), seed = arg('seed', null);
 const rooms = new Map();
 function room(name) {
   if (!rooms.has(name)) {
-    const db = new TrophyDB(nodeSql(memory ? ':memory:' : path.join(here, `dev-${name}.sqlite`)));
-    if (seed && db.rows('character').length === 0) db.importDump(JSON.parse(fs.readFileSync(seed, 'utf8')));
+    const db = new DocStore(nodeSql(memory ? ':memory:' : path.join(here, `dev-${name}.sqlite`)));
+    // --seed: a new room starts with this Django dump, converted the way the page imports it
+    if (seed && db.dataVersion === 0 && !db.snapshot().legacy) {
+      db.replaceAll({ docs: fromDjangoDump(JSON.parse(fs.readFileSync(seed, 'utf8'))), dataVersion: DATA_VERSION, from: 0, reason: 'seed' });
+    }
     rooms.set(name, new RoomCore({ db }));
   }
   return rooms.get(name);
@@ -39,7 +43,6 @@ const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
   '.webmanifest': 'application/manifest+json' };
 const chaos = process.argv.includes('--chaos');
 const sockets = new Set(); // { ws, frozen }
-const PROTOCOL = (await import('../worker/src/schema.mjs')).PROTOCOL;
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'X-Relay-Key' };
 
 const server = http.createServer((req, res) => {

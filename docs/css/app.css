@@ -307,3 +307,5 @@ table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
 .ov-divider { border-left: 3px solid var(--base-content); }
 .ov-list { list-style: disc; margin: 0; padding-left: 1.1rem; }
 .ov-md { font-size: 0.85rem; }
+.backups-intro { margin-bottom: 1rem; max-width: 42rem; }
+.status.upgrading .dot { background: var(--warning); }

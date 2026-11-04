@@ -1,9 +1,19 @@
-// The client's copy of the game database and its connection to the room's "db" peer.
+// The page's copy of the game data and its connection to the room's "db" peer.
 //
-// Every browser holds the whole database (it is small). Reads are local; writes are sent to
-// the room as ops, and the room broadcasts the changed rows to everybody, this browser
-// included. Changes are numbered; on a gap, or after reconnecting, the client gets a fresh
-// snapshot.
+// The relay is a generic document store (worker/src/store.mjs). The page holds every
+// document (the data is small), applies the game rules itself (model/rules.js) and upgrades
+// the data layout when needed (model/migrations.js). Writes go to the relay as batches; the
+// relay broadcasts the changed documents to everybody, this page included. Changes are
+// numbered; on a gap, or after reconnecting, the page gets a fresh snapshot.
+//
+// Two pages changing the same thing at once: a rule that changes something it read sends the
+// revision it read, the relay refuses the later batch, and the page computes it again from
+// the fresh data and resends (a few times at most).
+//
+// Upgrades: the snapshot says which layout the data follows (dataVersion). Older than this
+// page's DATA_VERSION: the page converts everything and sends it to the relay, which accepts
+// it only if nobody upgraded first (and keeps a backup). Newer: the page is out of date and
+// asks to be reloaded; the relay refuses its writes anyway.
 //
 // Keeping the connection healthy:
 // - The page pings every 5 s and the relay answers. Nothing heard for 15 s (while the page is
@@ -12,36 +22,44 @@
 //   sends a ping and reconnects unless something arrives within 4 s.
 // - Reconnecting retries with a growing pause (1 s up to 10 s) for as long as needed.
 // - Text edits (field saves, renames, new list items) go through an outbox: they are kept,
-//   also over a page reload, until the room confirms them, and resent after reconnecting.
-//   Each carries a unique id, so the room applies a resent edit only once. Until confirmed,
+//   also over a page reload, until the relay confirms them, and resent after reconnecting.
+//   Each carries a unique id, so the relay applies a resent edit only once. Until confirmed,
 //   the page shows the edited text. Other actions (clicks) need a live connection.
 // - When connecting keeps failing, /check on the relay tells apart a wrong secret, an
 //   unreachable relay, a version mismatch and a network that blocks WebSockets.
 
 import { RelayPeer, b64url } from './transport.js';
+import { DocView } from './model/view.js';
+import { compute, RuleError } from './model/rules.js';
+import { DATA_VERSION, upgrade } from './model/migrations.js';
+export { byPosition, bySlot } from './model/rules.js';
 
-export const PROTOCOL = 2;     // must match PROTOCOL in worker/src/schema.mjs
+export const PROTOCOL = 3;     // must match PROTOCOL in worker/src/store.mjs
 
 const PING_EVERY = 5000;       // keepalive interval (answered by Cloudflare without waking the room)
 const DEAD_AFTER = 15000;      // nothing heard this long while visible -> reconnect
 const PROBE_WAIT = 4000;       // after a probe ping, wait this long for any message
 const SLOW_REPLY = 5000;       // a reply slower than this triggers a probe
 const REQUEST_TIMEOUT = 15000; // give up on a reply
+const CONFLICT_RETRIES = 6;    // recompute this many times when someone else changed the same thing
 const OUTBOX_MAX_AGE = 6 * 3600 * 1000; // queued edits older than this are dropped
 const QUEUED_OPS = new Set(['save_field', 'rename_child', 'add_child',
   'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section']);
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const newOid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const refused = (message, extra = {}) => Object.assign(new Error(message), { refused: true }, extra);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export class Data {
   constructor(cfg) {
     this.cfg = cfg;
-    this.tables = {};          // model -> Map(id -> row)
+    this.view = new DocView(); // the documents
     this.locks = {};           // lock key -> peer id holding it
     this.me = null;            // this browser's peer id
-    this.status = 'connecting'; // 'connecting' | 'live' | 'offline' | 'outdated'
+    this.status = 'connecting'; // 'connecting' | 'upgrading' | 'live' | 'offline' | 'outdated'
     this.problem = '';         // explanation when connecting keeps failing
-    this.ready = false;        // a snapshot has arrived at least once
+    this.ready = false;        // data has arrived at least once
+    this.dataVersion = null;
     this.epoch = null; this.seq = 0;
     this.pending = new Map(); this.rid = 0;
     this.listeners = new Set();
@@ -152,20 +170,21 @@ export class Data {
   receive(m) {
     if (!m || typeof m !== 'object') return;
     if (m.t === 'snap') {
-      if (m.protocol !== PROTOCOL) return this.outdated(m.protocol);
-      this.tables = {};
-      for (const [model, rows] of Object.entries(m.tables)) this.tables[model] = new Map(rows.map(r => [r.id, r]));
+      if (m.protocol !== PROTOCOL) return this.outdated(`This page (version ${PROTOCOL}) and the relay (version ${m.protocol ?? '?'}) don't match. Reload the page; if that doesn't help, redeploy the worker.`);
       this.locks = m.locks || {}; this.me = m.you; this.epoch = m.epoch; this.seq = m.seq;
+      this.dataVersion = m.dataVersion;
+      if (m.dataVersion > DATA_VERSION) return this.outdated('The game data was upgraded by a newer version of this page. Reload the page.');
+      if (m.dataVersion < DATA_VERSION) return this.upgradeRoom(m);
+      this.view.load(m.docs);
       this.ready = true; this.status = 'live'; this.problem = ''; this.failures = 0; this.backoff = 1000;
       this.changed();
       this.pump();
     } else if (m.t === 'version') {
-      this.outdated(m.protocol);
+      this.outdated(`This page (version ${PROTOCOL}) and the relay (version ${m.protocol ?? '?'}) don't match. Reload the page; if that doesn't help, redeploy the worker.`);
     } else if (m.t === 'chg') {
       if (m.epoch !== this.epoch || m.seq !== this.seq + 1) return this.resync();
       this.seq = m.seq;
-      for (const [model, row] of m.rows) (this.tables[model] ||= new Map()).set(row.id, row);
-      for (const [model, id] of m.del) this.tables[model]?.delete(id);
+      this.view.apply(m.docs, m.del);
       this.changed();
     } else if (m.t === 'locks') {
       this.locks = m.locks || {};
@@ -174,13 +193,32 @@ export class Data {
       const p = this.pending.get(m.rid);
       if (!p) return;
       this.pending.delete(m.rid); clearTimeout(p.timer); clearTimeout(p.slow);
-      m.ok ? p.resolve(m.result) : p.reject(Object.assign(new Error(m.error || 'Refused.'), { refused: true }));
+      m.ok ? p.resolve(m.result) : p.reject(refused(m.error || 'Refused.', { code: m.code, key: m.key, rev: m.rev }));
     }
   }
 
-  outdated(theirs) {
+  // The data is in an older layout: convert it here and hand it to the relay. Whoever upgrades
+  // first wins; everybody then receives the upgraded data as a fresh snapshot.
+  async upgradeRoom(m) {
+    this.status = 'upgrading'; this.changed();
+    let docs;
+    try {
+      docs = upgrade(m.dataVersion, { docs: Object.fromEntries(m.docs.map(([k, , d]) => [k, d])), legacy: m.legacy });
+    } catch (e) {
+      console.error(e);
+      return this.outdated('The game data could not be upgraded: ' + e.message);
+    }
+    try {
+      await this.request({ t: 'migrate', from: m.dataVersion, to: DATA_VERSION, docs }, { beforeReady: true });
+    } catch (e) {
+      if (e.code !== 'version') { this.notice('Upgrading the game data failed: ' + e.message); this.changed(); }
+      // 'version': another page upgraded first; its snapshot is on the way
+    }
+  }
+
+  outdated(problem) {
     this.status = 'outdated';
-    this.problem = `This page (version ${PROTOCOL}) and the relay (version ${theirs ?? '?'}) don't match. Reload the page; if that doesn't help, redeploy the worker.`;
+    this.problem = problem;
     if (this.peer) { this.peer.destroy(); this.peer = null; }
     this.changed();
   }
@@ -188,8 +226,9 @@ export class Data {
   resync() { if (this.conn) this.conn.send({ t: 'resync' }); }
 
   // --- outgoing ----------------------------------------------------------------
-  request(payload) {
-    if (!this.conn || this.status !== 'live') return Promise.reject(new Error('Not connected — try again in a moment.'));
+  // beforeReady: the upgrade, the one request sent before the data is ready.
+  request(payload, { beforeReady = false } = {}) {
+    if (!this.conn || (this.status !== 'live' && !(beforeReady && this.status === 'upgrading'))) return Promise.reject(new Error('Not connected — try again in a moment.'));
     const rid = ++this.rid;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.pending.delete(rid); reject(new Error('No answer from the relay.')); this.probe(); }, REQUEST_TIMEOUT);
@@ -199,13 +238,36 @@ export class Data {
     });
   }
 
+  // Compute an operation from the local data and send it; on a conflict (someone else changed
+  // the same thing first) compute again from the fresh data. The same oid is kept throughout,
+  // so a resend after a lost reply is applied only once.
+  async run(op, args = {}, { oid = newOid(), release } = {}) {
+    for (let attempt = 0; attempt < CONFLICT_RETRIES; attempt++) {
+      let batch;
+      try { batch = compute(this.view, op, args); } catch (e) {
+        if (e instanceof RuleError) throw refused(e.message);
+        throw e;
+      }
+      if (!batch.writes.length) { if (release) this.unlock(release); return batch.result; }
+      try {
+        await this.request({ t: 'write', oid, version: this.dataVersion, writes: batch.writes, result: batch.result, release });
+        return batch.result;
+      } catch (e) {
+        if (e.code !== 'conflict') throw e;
+        // the other change reaches this page before (or soon after) the refusal
+        if (this.view.rev(e.key) < e.rev) await sleep(100 * (attempt + 1));
+      }
+    }
+    throw refused('Too many changes at the same moment — try again.');
+  }
+
   // A write that needs the connection now (clicks). Rejects when offline.
-  op(op, args = {}, release = undefined) { return this.request({ t: 'op', oid: newId(), op, args, release }); }
+  op(op, args = {}, release = undefined) { return this.run(op, args, { release }); }
 
   // A text edit: kept until confirmed, resent after reconnecting.
   edit(op, args = {}, release = undefined) {
     if (!QUEUED_OPS.has(op)) return this.op(op, args, release);
-    this.outbox.push({ oid: newId(), op, args, release, at: Date.now() });
+    this.outbox.push({ oid: newOid(), op, args, release, at: Date.now(), dataVersion: DATA_VERSION });
     this.saveOutbox(); this.changed(); this.pump();
   }
 
@@ -213,7 +275,8 @@ export class Data {
     if (this.sending || this.status !== 'live' || !this.outbox.length) return;
     const e = this.sending = this.outbox[0];
     try {
-      await this.request({ t: 'op', oid: e.oid, op: e.op, args: e.args, release: e.release });
+      if (e.dataVersion !== this.dataVersion) throw refused('it was made before the game data was upgraded.');
+      await this.run(e.op, e.args, { oid: e.oid, release: e.release });
       this.outbox = this.outbox.filter(x => x !== e);
     } catch (err) {
       if (!err.refused) { this.sending = null; return; } // connection trouble: kept and resent later
@@ -243,21 +306,27 @@ export class Data {
     return this.request({ t: 'lock', key }).then(() => true, e => !e.refused);
   }
   unlock(key) { if (this.conn && this.status === 'live') this.conn.send({ t: 'unlock', key }); }
-  exportDump() { return this.request({ t: 'export' }); }
-  importDump(dump) { return this.request({ t: 'import', dump }); }
+
+  // Export/import/backups. Imports and restores come in any known layout and are upgraded here.
+  exportData() { return this.request({ t: 'export' }); }
+  importDocs(dataVersion, docs) {
+    return this.request({ t: 'import', version: DATA_VERSION, docs: upgrade(dataVersion, { docs }) });
+  }
+  listBackups() { return this.request({ t: 'backups' }); }
+  async restoreBackup(id) {
+    const b = await this.request({ t: 'backup', id });
+    return this.importDocs(b.dataVersion, b.docs);
+  }
 
   // --- reading -----------------------------------------------------------------
-  all(model) { return [...(this.tables[model]?.values() || [])]; }
-  get(model, id) { return this.tables[model]?.get(Number(id)) || null; }
-  // Rows of a child list of one character, in sheet order.
-  childrenOf(model, characterId, order = byPosition) {
-    return this.all(model).filter(r => r.character === characterId).sort(order);
-  }
+  all(kind) { return this.view.all(kind); }
+  get(kind, id) { return this.view.get(kind, id); }
+  childrenOf(kind, characterId, order) { return this.view.childrenOf(kind, characterId, order); }
   // True when somebody else is editing the thing behind this lock key.
   lockedByOther(key) { const h = this.locks[key]; return !!h && h !== this.me; }
 
   // The text of the latest edit waiting in the outbox for op with these args, or undefined.
-  // E.g. queued('save_field', {id: 5, field: 'name'}, 'value').
+  // E.g. queued('save_field', {id: '5', field: 'name'}, 'value').
   queued(op, match, valueKey) {
     for (let i = this.outbox.length - 1; i >= 0; i--) {
       const e = this.outbox[i];
@@ -267,6 +336,3 @@ export class Data {
   pendingField(id, field) { return this.queued('save_field', { id, field }, 'value'); }
   pendingName(kind, item) { return this.queued('rename_child', { kind, item }, 'name'); }
 }
-
-export const byPosition = (a, b) => a.position - b.position || a.id - b.id;
-export const bySlot = (a, b) => a.slot - b.slot || byPosition(a, b);

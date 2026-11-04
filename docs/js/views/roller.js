@@ -7,7 +7,7 @@ import { editValue, attempt, spin, dieSvg, rollD6 } from '../ui.js';
 
 export function roller(app) {
   const { data } = app;
-  const row = data.get('roller', 1) || { mat: [], sections: [] };
+  const row = data.get('roller', 'main') || { mat: [], sections: [] };
   const mat = Array.isArray(row.mat) ? row.mat : [];
   const sections = Array.isArray(row.sections) ? row.sections : [];
   const act = (op, args) => attempt(data.op(op, args)).finally(() => app.render());

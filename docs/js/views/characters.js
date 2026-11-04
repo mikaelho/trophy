@@ -3,27 +3,18 @@
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { repeat } from '../../vendor/lit-html/directives/repeat.js';
 import { live } from '../../vendor/lit-html/directives/live.js';
-import { byPosition, bySlot } from '../data.js';
+import { byPosition, bySlot, compareIds, burdenOf, FREE_POWERS, FREE_SKILLS, RUIN_MAX, HOARD_MAX, AMMO_MAX } from '../model/rules.js';
 import { editValue, markdown, attempt, toast, dieIcon } from '../ui.js';
 
-export const FREE_POWERS = 3, FREE_SKILLS = 4, RUIN_MAX = 6, HOARD_MAX = 50, AMMO_MAX = 3, BASE_BURDEN = 1;
+export { burdenOf, HOARD_MAX };
 const LOCKED_TITLE = 'Someone is editing this';
-
-// --- derived values (same rules as Character.burden in models.py) ---------------
-
-export function burdenOf(data, c) {
-  const n = model => data.childrenOf(model, c.id).length;
-  const base = BASE_BURDEN + Math.max(0, n('power') - FREE_POWERS) + Math.max(0, n('skill') - FREE_SKILLS)
-    + n('householdmember') + n('combatitem');
-  return Math.max(0, base + c.burden_offset);
-}
 
 export const characterLabel = c => {
   const name = c.name.trim() || 'Unnamed character', occ = c.occupation.trim();
   return occ ? `${name} (${occ})` : name;
 };
 export const sortedCharacters = data =>
-  data.all('character').sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : a.id - b.id));
+  [...data.all('character')].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : compareIds(a.id, b.id)));
 
 // --- list ------------------------------------------------------------------------
 
@@ -158,9 +149,9 @@ export function characterSheet(app, id) {
   };
 
   const burden = burdenOf(data, c);
-  const combat = data.childrenOf('combatitem', c.id);
-  const backpack = data.childrenOf('backpackitem', c.id, bySlot);
-  const found = data.childrenOf('foundequipment', c.id, byPosition);
+  const combat = data.childrenOf('combat', c.id);
+  const backpack = data.childrenOf('backpack', c.id, bySlot);
+  const found = data.childrenOf('found', c.id, byPosition);
 
   return html`
     <div class="sheet-head">
@@ -221,7 +212,7 @@ export function characterSheet(app, id) {
           <span class="dim-text">/ ${HOARD_MAX}</span></div>
       </div>
 
-      ${listCard('Household', '0 free', 'household', 'householdmember', 0, '+ add detail', true)}
+      ${listCard('Household', '0 free', 'household', 'household', 0, '+ add detail', true)}
 
       <div class="sheet-card">
         <div class="card-head center"><div class="field-label">Backpack Equipment</div><div class="field-label">Uses</div></div>

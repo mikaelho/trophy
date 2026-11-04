@@ -1,13 +1,17 @@
-# Trophy relay and database (Cloudflare Worker)
+# Trophy relay (Cloudflare Worker)
 
 One Durable Object per game room. It relays messages between the players' browsers like the
-VoD relay, and also owns the room's game database in the Durable Object's built-in SQLite.
-The Free Cloudflare plan is enough.
+VoD relay, and keeps the room's data in the Durable Object's built-in SQLite as a small,
+generic **document store**. It knows nothing about Trophy: the page (`docs/`) owns the data
+layout, the game rules and the schema migrations. Schema and feature changes therefore only
+need the page to be published; the worker rarely changes. The Free Cloudflare plan is enough.
 
-- `src/trophy-db.mjs` – tables and write operations (ported from `trophy/alive_hooks.py`)
+- `src/store.mjs` – the document store: documents with revisions, all-or-nothing batches,
+  data version, migrate/import with backups, hand-over of old tables
 - `src/room-core.mjs` – the room: relay, the built-in `db` peer, field locks, change broadcast
-- `src/worker.js` – the Cloudflare wrapper (secret check, Durable Object)
-- `test/` – tests that run without Cloudflare: `node --test test/*.test.mjs` (Node 22.5+)
+- `src/worker.js` – the Cloudflare wrapper (secret check, hibernation, `/check`)
+- `test/` – tests that run without Cloudflare (Node 22.5+); from the repository root:
+  `node --test test/*.test.mjs worker/test/*.test.mjs`
 
 ## Deploy
 
@@ -21,17 +25,33 @@ The Free Cloudflare plan is enough.
 5. Open the game with the relay address, a room name and the secret:
    `https://<you>.github.io/trophy/?relay=trophy-relay.<your-name>.workers.dev&room=campaign1#key=YOUR-SECRET`
 
-Each room name is a separate game with its own database. The page remembers the relay
-settings, so after the first visit the plain page address works on that device.
+Each room name is a separate game with its own data. The page remembers the relay settings,
+so after the first visit the plain page address works on that device.
 
-## Backups
+## Moving from the previous relay version
 
-- **Export data…** in the page's ⋯ menu downloads the whole database as a Django
-  `dumpdata`-style JSON file. **Import data…** replaces everything with such a file
-  (also the Django app's own `dumpdata` output; other apps' entries are skipped).
-- Cloudflare also keeps 30 days of point-in-time history of every Durable Object's
-  storage, restorable with the `getBookmarkForTime()` / `onNextSessionRestoreBookmark()`
-  storage API if ever needed.
+Rooms made by the previous version keep their data in Django-style tables. Deploy this
+version over it: the tables stay as they are, and the first page to open the room converts
+them into documents and hands them to the relay (once, even if several pages open the room
+at the same moment). The old tables are never changed or removed. Data from the Django app
+itself comes in with **Import data…** in the page's ⋯ menu (a `dumpdata` file).
+
+## The store
+
+- **Documents:** key `kind/id` (e.g. `character/16`) → a JSON object, with a revision number
+  that goes up on every change. The page describes the kinds in `docs/js/model/migrations.js`.
+- **Batches:** `put` / `patch` (merge fields) / `delete`, applied all or nothing. A write can
+  require the document's current revision (`ifRev`; 0 = must not exist): when two people
+  change the same thing at once, the later batch is refused and the page computes it again.
+- **Data version:** which layout the documents follow. Every write states the version it was
+  made for; writes for another version are refused, so a page with old code can't write
+  old-style data after an upgrade.
+- **Upgrades:** a page with newer code converts the documents and sends them with "replace
+  everything if still at version N"; one page wins, everybody gets the new data.
+- **Backups:** before every upgrade, import and restore the full data is kept (the last 10).
+  **Backups…** in the page's menu lists and restores them; a restore is itself backed up.
+- **No double edits:** every batch carries a unique id; a batch resent after a lost reply is
+  not applied again (ids are remembered for two days).
 
 ## Keeping connections reliable
 
@@ -43,23 +63,18 @@ settings, so after the first visit the plain page address works on that device.
   numbering is stored in the database.
 - **Dead connections.** Browsers ping every 5 s. The room closes connections silent for 70 s
   and frees their field locks; while locks are held, an alarm checks every 30 s.
-- **No double edits.** Every operation carries a unique id. If a reply is lost and the browser
-  resends the operation after reconnecting, the room returns the original result without
-  applying it again (ids are remembered for two days, in the `trophy_applied` table).
 - **Versions.** The page and the relay check that they speak the same protocol version
-  (`PROTOCOL` in `src/schema.mjs` and `docs/js/data.js`); on a mismatch the page asks to be
-  reloaded or the worker to be redeployed. Deploy the worker and publish `docs/` together.
+  (`PROTOCOL` in `src/store.mjs` and `docs/js/data.js`); on a mismatch the page asks to be
+  reloaded or the worker to be redeployed. This only changes when the store itself changes.
 - **/check.** `GET /check` with header `X-Relay-Key` (base64url of the secret) reports whether
   the secret is right and the protocol version. The page uses it to explain connection
   problems in plain words; `dev/check-relay.mjs` uses it too.
 
 ## Limits
 
-Messages from browsers are limited to 1 MB (`maxMessage` in `room-core.mjs`); a larger
-one gets an error reply instead of closing the connection.
+Messages from browsers are limited to 1 MB (`maxMessage` in `room-core.mjs`), documents to
+256 KB, batches to 500 writes. Cloudflare limits a stored value to 2 MB, which also bounds a
+backup (the whole data; today about 20 KB).
 
-## Tests
-
-`node --test test/*.test.mjs` runs the database and room tests, and runs `worker.js` in a
-stand-in for the Cloudflare runtime that hibernates the room between messages. The stand-in
-follows Cloudflare's documentation; `check-relay.mjs` is the test against the real thing.
+Cloudflare also keeps 30 days of point-in-time history of every Durable Object's storage,
+restorable with the `getBookmarkForTime()` / `onNextSessionRestoreBookmark()` storage API.

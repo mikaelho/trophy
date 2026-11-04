@@ -8,7 +8,7 @@
 // Steps: HTTP reachability and secret (/check), protocol version, live connection, database
 // snapshot, round-trip times, and that a second connection sees the first (relaying).
 
-const PROTOCOL = 2; // the page's protocol version (docs/js/data.js)
+const PROTOCOL = 3; // the page's protocol version (docs/js/data.js)
 const [addrArg, secret, room = 'trophy'] = process.argv.slice(2);
 if (!addrArg || secret == null) {
   console.log('Usage: node check-relay.mjs <relay-address> <secret> [room]');
@@ -91,9 +91,11 @@ try {
   const snap = m.d.d;
   if (snap.t === 'version') bad(`relay speaks protocol ${snap.protocol}`, 'redeploy the worker');
   else {
-    const n = k => (snap.tables[k] || []).length;
+    const n = k => snap.docs.filter(([key]) => key.startsWith(k + '/')).length;
     const size = JSON.stringify(snap).length;
-    ok(`snapshot in ${Math.round(performance.now() - t1)} ms: ${n('character')} characters, ${n('monster')} monsters, ${(size / 1024).toFixed(1)} KB, change #${snap.seq}`);
+    ok(`snapshot in ${Math.round(performance.now() - t1)} ms: data version ${snap.dataVersion}, ${n('character')} characters, ${n('monster')} monsters, ${(size / 1024).toFixed(1)} KB, change #${snap.seq}`);
+    if (snap.dataVersion === 0 && snap.legacy) ok(`data from the previous relay version is waiting (${(snap.legacy.trophy_character || []).length} characters); the first page to open the room upgrades it`);
+    else if (snap.dataVersion === 0) ok('a new, empty room; the first page to open it sets it up');
     if (size > 512 * 1024) bad('the snapshot is large', 'it still works, but joining gets slower');
   }
 } catch (e) {

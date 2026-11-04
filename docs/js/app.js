@@ -6,6 +6,7 @@ import { html, render, nothing } from '../vendor/lit-html/lit-html.js';
 import { relayConfig } from './transport.js';
 import { Data } from './data.js';
 import { installKeys, toast, attempt } from './ui.js';
+import { fromDjangoDump } from './model/migrations.js';
 import { characterList, characterSheet } from './views/characters.js';
 import { overview } from './views/overview.js';
 import { roller } from './views/roller.js';
@@ -58,7 +59,7 @@ const app = {
   focusAfter: null,    // selector to focus after the next render
   route() {
     const q = new URLSearchParams(location.search);
-    return { view: q.get('view') || '', id: q.get('id') ? Number(q.get('id')) : null, from: q.get('from') || '' };
+    return { view: q.get('view') || '', id: q.get('id') || null, from: q.get('from') || '' };
   },
   href(route) {
     const q = new URLSearchParams(relaySearch());
@@ -98,27 +99,63 @@ const app = {
 };
 addEventListener('popstate', () => { app.editing = null; app.render(); });
 
-// --- export / import ------------------------------------------------------------------
+// --- export / import / backups ---------------------------------------------------------
 async function exportData() {
-  const dump = await attempt(app.data.exportDump());
-  if (!dump) return;
+  const data = await attempt(app.data.exportData());
+  if (!data) return;
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-  const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `trophy-${cfg.room}-${stamp}.json` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+// A file to import: an export of this page ({format: 'trophy-docs', dataVersion, docs}), or a
+// Django dump (dumpdata of the Django app, or an export of the previous relay version).
+function readImport(json) {
+  if (Array.isArray(json)) return { dataVersion: 1, docs: fromDjangoDump(json), kind: 'Django dump' };
+  if (json && json.format === 'trophy-docs' && json.docs && typeof json.docs === 'object') {
+    return { dataVersion: Number(json.dataVersion), docs: json.docs, kind: 'Trophy export' };
+  }
+  throw new Error('This is not a Trophy export or a Django dump.');
+}
+
 function importData() {
   const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json,application/json' });
   input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
-    let dump;
-    try { dump = JSON.parse(await file.text()); } catch (_) { return toast('That file is not valid JSON.'); }
-    if (!confirm(`Replace ALL game data in room "${cfg.room}" with "${file.name}"? This affects everyone in the room.`)) return;
-    const r = await attempt(app.data.importDump(dump));
-    if (r) { toast(`Loaded ${r.count} rows.`); app.nav({}); }
+    let found;
+    try { found = readImport(JSON.parse(await file.text())); } catch (e) { return toast(e instanceof SyntaxError ? 'That file is not valid JSON.' : e.message); }
+    const n = kind => Object.keys(found.docs).filter(k => k.startsWith(kind + '/')).length;
+    if (!confirm(`Replace ALL game data in room "${cfg.room}" with "${file.name}" (${found.kind}: ${n('character')} characters, ${n('monster')} monsters)?\n\nThis affects everyone in the room. The current data is kept as a backup.`)) return;
+    const r = await attempt(app.data.importDocs(found.dataVersion, found.docs));
+    if (r) { toast(`Loaded ${r.count} records.`); app.nav({}); }
   };
   input.click();
+}
+
+// Backups the relay keeps before every upgrade, import and restore (the last 10).
+let backups = null;
+async function loadBackups() {
+  backups = await attempt(app.data.listBackups()) || [];
+  app.render();
+}
+function backupsPage() {
+  if (!backups) { loadBackups(); return html`<div class="hint-text">Loading backups…</div>`; }
+  const restore = async b => {
+    if (!confirm(`Replace ALL game data in room "${cfg.room}" with the backup from ${new Date(b.at).toLocaleString()}?\n\nThe current data is kept as a backup too.`)) return;
+    if (await attempt(app.data.restoreBackup(b.id))) { toast('Backup restored.'); backups = null; app.nav({}); }
+  };
+  return html`<div class="page narrow">
+    <h1 class="page-title">Backups</h1>
+    <p class="dim-text backups-intro">The relay keeps the game data as it was before each upgrade, import and restore (the last 10).
+      Restoring one keeps the current data as a backup too. Use Export for copies of your own.</p>
+    ${backups.length ? html`<div class="eq-rows">${backups.map(b => html`<div class="eq-row">
+      <div class="eq-text"><span class="eq-title">${new Date(b.at).toLocaleString()}</span>
+        <span class="dim-text"> — ${b.reason} · ${(b.size / 1024).toFixed(1)} KB</span></div>
+      <button class="btn btn-sm" @click=${() => restore(b)}>Restore</button>
+    </div>`)}</div>` : html`<div class="hint-text">No backups yet.</div>`}
+  </div>`;
 }
 
 // --- drawing --------------------------------------------------------------------------
@@ -129,13 +166,14 @@ function page() {
   if (view === 'roller') return roller(app);
   if (view === 'bestiary') return bestiary(app);
   if (view === 'equipment') return equipment(app);
+  if (view === 'backups') return backupsPage();
   return characterList(app);
 }
 
 const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['equipment', 'Equipment']];
 const navView = () => { const { view } = app.route(); return view === 'character' ? '' : view; };
 
-const statusText = { connecting: 'Connecting…', live: 'Connected', offline: 'Reconnecting…', outdated: 'Update needed' };
+const statusText = { connecting: 'Connecting…', upgrading: 'Upgrading the game data…', live: 'Connected', offline: 'Reconnecting…', outdated: 'Update needed' };
 
 function banner(d) {
   const waiting = d.outbox.length;
@@ -162,6 +200,7 @@ function frame(content) {
         <div class="menu-body" @click=${e => e.currentTarget.parentElement.removeAttribute('open')}>
           <button class="btn btn-ghost btn-sm" @click=${exportData} ?disabled=${d.status !== 'live'}>Export data…</button>
           <button class="btn btn-ghost btn-sm" @click=${importData} ?disabled=${d.status !== 'live'}>Import data…</button>
+          <button class="btn btn-ghost btn-sm" @click=${() => { backups = null; app.nav({ view: 'backups' }); }} ?disabled=${d.status !== 'live'}>Backups…</button>
           <button class="btn btn-ghost btn-sm" @click=${cycleTheme}>Theme: ${theme}</button>
           <div class="menu-note">Room: ${cfg.room}</div>
         </div>
