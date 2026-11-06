@@ -16,7 +16,7 @@ const LIST_KINDS = new Set(['power', 'skill', 'household', 'combat', 'found', 'b
 const CHILD_KINDS = [...LIST_KINDS];
 const MONSTER_TEXT = { name: 200, description: 400, defences: null, weakness: 300 };
 const DIE_COLORS = new Set(['light', 'dark']);
-const PERSON_TEXT = { name: 120, title: 200, location: 200, look: 300, equipment: 2000, description: 20000 };
+const PERSON_TEXT = { name: 120, title: 200, location: 200, look: 300, equipment: 1000, description: 20000 };
 
 export class RuleError extends Error {}
 
@@ -256,6 +256,15 @@ Object.assign(RULES, {
     return done([patch('person', p, { [field]: cut(String(value ?? '').trim(), PERSON_TEXT[field]) }, false)]);
   },
   person_remove(db, { id }) { const p = person(db, id); return done([del('person', p.id)]); },
+  // The die buttons: add one item to the comma-separated Look or Equipment.
+  person_append(db, { id, field, value }) {
+    if (field !== 'look' && field !== 'equipment') throw new RuleError('Unknown field: ' + field);
+    const p = person(db, id), v = String(value ?? '').trim();
+    if (!v) return done([]);
+    const existing = String(p[field] ?? '').trim();
+    const text = existing ? existing + ', ' + v : v.charAt(0).toUpperCase() + v.slice(1);
+    return done([patch('person', p, { [field]: cut(text, PERSON_TEXT[field]) })]);
+  },
 });
 
 export function compute(db, op, args = {}) {

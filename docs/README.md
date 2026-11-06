@@ -31,7 +31,8 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `js/views/bestiary.js` – shared monster boxes, with field locks like the sheet
 - `js/views/equipment.js` – 2d6 rolls on the equipment tables (GM mode)
 - `js/views/people.js` – supporting characters (GM mode): generated Look (three descriptors) and
-  Equipment (one roll on each equipment table), then freely edited; filter per viewer
+  Equipment (one roll on each equipment table) as comma-separated lists, then freely edited;
+  the die buttons add one more; filter per viewer
 - `js/lists.js` – loads `lists/`: descriptors and the d6/d6 tables (named in `TABLES` there,
   since GitHub Pages cannot list a folder)
 - `lists/` – copy of `trophy/lists/` (the page fetches these; GitHub Pages only serves this folder)

@@ -1,18 +1,24 @@
-// People: supporting characters, shared with everyone in the room. "Generate" adds one with
-// three random descriptors (Look) and three random pieces of equipment, one roll on each
-// equipment table; everything can then be edited freely, and the die buttons re-roll Look or
-// Equipment. Fields lock while someone edits them, like on the character sheet.
+// People: supporting characters (a GM page). "Generate" adds one with three random
+// descriptors (Look) and three random pieces of equipment, one roll on each equipment table,
+// both as comma-separated lists; everything can then be edited freely, and the die buttons add
+// one more descriptor or piece of equipment. Fields lock while someone edits them, like on the
+// character sheet.
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { repeat } from '../../vendor/lit-html/directives/repeat.js';
 import { editValue, attempt, toast, dieIcon } from '../ui.js';
 import { compareIds } from '../model/rules.js';
-import { randomDescriptors, randomEquipment } from '../lists.js';
+import { randomDescriptors, randomEquipment, randomDescriptor, randomEquipmentItem } from '../lists.js';
 
 const LOCKED_TITLE = 'Someone is editing this';
 let filter = ''; // per viewer, for this tab
 
+// Three of each for a new person; one at a time from the die buttons.
 const generated = async what => {
-  try { return what === 'look' ? await randomDescriptors(3) : (await randomEquipment()).join('\n'); }
+  try { return what === 'look' ? await randomDescriptors(3) : (await randomEquipment()).join(', '); }
+  catch (_) { toast('Could not load the lists to generate from.'); return null; }
+};
+const oneMore = async what => {
+  try { return what === 'look' ? await randomDescriptor() : await randomEquipmentItem(); }
   catch (_) { toast('Could not load the lists to generate from.'); return null; }
 };
 
@@ -52,9 +58,9 @@ export function people(app) {
     const textarea = (f, rows, placeholder = '') => { const a = attrs(f); return html`
       <textarea class="textarea ${a.cls}" rows=${rows} data-edit placeholder=${placeholder || nothing}
         .value=${a.value} ?disabled=${a.disabled} title=${a.title} @focus=${a.focus} @blur=${a.blur}></textarea>`; };
-    const reroll = f => html`<button class="btn btn-ghost btn-xs" ?disabled=${locked(f)}
-      title=${f === 'look' ? 'Roll three new descriptors' : 'Roll three new pieces of equipment'}
-      @click=${async () => { const v = await generated(f); if (v != null) data.edit('person_save', { id: p.id, field: f, value: v }); }}>${dieIcon}</button>`;
+    const addOne = f => html`<button class="btn btn-ghost btn-xs" ?disabled=${locked(f)}
+      title=${f === 'look' ? 'Add a random descriptor' : 'Add a random piece of equipment'}
+      @click=${async () => { const v = await oneMore(f); if (v) attempt(data.op('person_append', { id: p.id, field: f, value: v })); }}>${dieIcon}</button>`;
 
     return html`<div class="person-box">
       <div class="person-top">
@@ -64,10 +70,10 @@ export function people(app) {
           @click=${() => { if (confirm(`Remove ${p.name.trim() || 'this person'}?`)) act('person_remove', { id: p.id }); }}>&times;</button>
       </div>
       <div class="field-label">Location</div>${input('location')}
-      <div class="card-head center"><div class="field-label">Look</div>${reroll('look')}</div>
+      <div class="card-head center"><div class="field-label">Look</div>${addOne('look')}</div>
       ${input('look')}
-      <div class="card-head center"><div class="field-label">Equipment</div>${reroll('equipment')}</div>
-      ${textarea('equipment', 3, 'one item per line')}
+      <div class="card-head center"><div class="field-label">Equipment</div>${addOne('equipment')}</div>
+      ${input('equipment')}
       <div class="field-label">Description</div>${textarea('description', 2)}
     </div>`;
   };

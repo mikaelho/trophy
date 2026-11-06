@@ -255,11 +255,11 @@ test('two pages changing the same thing: the later one is refused, then recomput
 test('people: generated look and equipment kept, fields edited, removed', () => {
   const { page, run } = setup();
   const v = page();
-  const { id } = run(v, 'person_add', { look: 'Gaunt, raspy, smoky', equipment: 'Bayonet\nCloak\nBucket' });
+  const { id } = run(v, 'person_add', { look: 'Gaunt, raspy, smoky', equipment: 'Bayonet, Cloak, Bucket' });
   const { id: id2 } = run(v, 'person_add', {});
   assert.equal(v.get('person', id2).position, 1);
   let p = v.get('person', id);
-  assert.equal(p.look, 'Gaunt, raspy, smoky'); assert.equal(p.equipment, 'Bayonet\nCloak\nBucket');
+  assert.equal(p.look, 'Gaunt, raspy, smoky'); assert.equal(p.equipment, 'Bayonet, Cloak, Bucket');
   assert.deepEqual([p.name, p.title, p.location, p.description], ['', '', '', '']);
   run(v, 'person_save', { id, field: 'name', value: '  Old Marta ' });
   run(v, 'person_save', { id, field: 'description', value: 'Knows the **tunnels**.\nOwes Lora.' });
@@ -269,4 +269,39 @@ test('people: generated look and equipment kept, fields edited, removed', () => 
   run(v, 'person_remove', { id });
   assert.equal(v.get('person', id), null);
   assert.throws(() => compute(v, 'person_save', { id, field: 'name', value: 'x' }), /no longer exists/);
+});
+
+test('people: the die buttons add one item to Look or Equipment', () => {
+  const { page, run } = setup();
+  const v = page();
+  const { id } = run(v, 'person_add', { look: 'Gaunt, raspy, smoky', equipment: 'Bayonet, Cloak' });
+  run(v, 'person_append', { id, field: 'look', value: 'tattooed' });
+  run(v, 'person_append', { id, field: 'equipment', value: 'Bucket' });
+  assert.equal(v.get('person', id).look, 'Gaunt, raspy, smoky, tattooed');
+  assert.equal(v.get('person', id).equipment, 'Bayonet, Cloak, Bucket');
+  const { id: empty } = run(v, 'person_add', {});
+  run(v, 'person_append', { id: empty, field: 'look', value: 'hollow-eyed' });
+  assert.equal(v.get('person', empty).look, 'Hollow-eyed', 'the first item starts with a capital');
+  assert.throws(() => compute(v, 'person_append', { id, field: 'name', value: 'x' }), /Unknown field/);
+  assert.deepEqual(compute(v, 'person_append', { id, field: 'look', value: '  ' }).writes, []);
+});
+
+test('version 2: equipment of existing people becomes a comma-separated list, nothing else changes', () => {
+  const v1 = {
+    ...fromDjangoDump(dump),
+    'person/a': { name: 'Old Marta', title: '', location: '', look: 'Gaunt', equipment: 'Rusty lantern\nFerry pole\n\n Rope ',
+      description: 'Line one\nLine two', position: 0, created_at: '2026-11-04T10:00:00.000Z' },
+    'person/b': { name: 'Nobody', title: '', location: '', look: '', equipment: '', description: '', position: 1, created_at: '2026-11-04T10:00:00.000Z' },
+  };
+  const v2 = upgrade(1, { docs: v1 });
+  assert.equal(v2['person/a'].equipment, 'Rusty lantern, Ferry pole, Rope');
+  assert.equal(v2['person/a'].description, 'Line one\nLine two', 'only equipment changes');
+  assert.equal(v2['person/b'].equipment, '');
+  for (const k of Object.keys(v1)) if (!k.startsWith('person/')) assert.deepEqual(v2[k], v1[k], k);
+  // a room at version 1 is upgraded through the relay like any other upgrade, with a backup
+  const store = new DocStore(nodeSql());
+  store.replaceAll({ docs: v1, dataVersion: 1, from: 0, reason: 'test' });
+  store.replaceAll({ docs: upgrade(store.dataVersion, { docs: v1 }), dataVersion: DATA_VERSION, from: 1, reason: 'before upgrade to version 2' });
+  assert.equal(store.getDoc('person/a').data.equipment, 'Rusty lantern, Ferry pole, Rope');
+  assert.equal(store.listBackups()[0].dataVersion, 1);
 });

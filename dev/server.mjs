@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { RoomCore } from '../worker/src/room-core.mjs';
 import { DocStore, PROTOCOL } from '../worker/src/store.mjs';
-import { fromDjangoDump, DATA_VERSION } from '../docs/js/model/migrations.js';
+import { fromDjangoDump, upgrade, DATA_VERSION } from '../docs/js/model/migrations.js';
 import { nodeSql } from '../worker/src/node-sql.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -31,7 +31,7 @@ function room(name) {
     const db = new DocStore(nodeSql(memory ? ':memory:' : path.join(here, `dev-${name}.sqlite`)));
     // --seed: a new room starts with this Django dump, converted the way the page imports it
     if (seed && db.dataVersion === 0 && !db.snapshot().legacy) {
-      db.replaceAll({ docs: fromDjangoDump(JSON.parse(fs.readFileSync(seed, 'utf8'))), dataVersion: DATA_VERSION, from: 0, reason: 'seed' });
+      db.replaceAll({ docs: upgrade(1, { docs: fromDjangoDump(JSON.parse(fs.readFileSync(seed, 'utf8'))) }), dataVersion: DATA_VERSION, from: 0, reason: 'seed' });
     }
     rooms.set(name, new RoomCore({ db }));
   }

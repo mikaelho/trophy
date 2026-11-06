@@ -68,6 +68,16 @@ export async function randomDescriptors(n = 3) {
 // One random descriptor (the character sheet's Look button adds one at a time).
 export async function randomDescriptor() { return pick(await loadDescriptors()); }
 
+// One piece of equipment: a roll on a random table, one item from the row.
+export async function randomEquipmentItem() {
+  const tables = await loadTables();
+  for (let i = 0; i < 20; i++) {
+    const { row } = rollOn(pick(tables));
+    if (row && row.items.length) return pick(row.items);
+  }
+  return '';
+}
+
 // Three pieces of equipment: one roll on each table, one item from the row each time.
 export async function randomEquipment() {
   const tables = await loadTables();

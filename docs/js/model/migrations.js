@@ -10,7 +10,9 @@
 //   roller/main      {mat: [die], sections: [{id, name, dice: [die]}]}   die = {id, color, value, roll?}
 //   monster/<id>     {endurance, name, description, habits: [6 strings], defences, weakness, position, created_at}
 //   person/<id>      {name, title, location, look, equipment, description, position, created_at}
-//                    (supporting characters; equipment is one item per line)
+//                    (supporting characters; look and equipment are comma-separated lists)
+//
+// Version 2: person equipment changed from one item per line to a comma-separated list.
 // `character` in child records is the character's id. created_at is an ISO time.
 // A new kind of record (like person) needs no new version: pages that don't know it ignore it.
 //
@@ -23,11 +25,18 @@
 // by the relay as raw rows. Django dumps (dumpdata files, and exports of that relay version)
 // convert to version 1 with fromDjangoDump.
 
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 const STEPS = {
   1: ({ legacy }) => v1FromRecords(recordsFromTables(legacy || {})),
+  2: ({ docs }) => mapKind(docs, 'person', p => ({
+    ...p, equipment: String(p.equipment ?? '').split(/\n+/).map(s => s.trim()).filter(Boolean).join(', '),
+  })),
 };
+
+// Change every document of one kind; other documents stay as they are.
+const mapKind = (docs, kind, fn) =>
+  Object.fromEntries(Object.entries(docs).map(([k, d]) => [k, k.startsWith(kind + '/') ? fn(d) : d]));
 
 // Bring documents from `version` up to DATA_VERSION. `legacy` is only used from version 0.
 export function upgrade(version, { docs = {}, legacy = null } = {}) {
