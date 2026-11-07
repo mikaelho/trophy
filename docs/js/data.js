@@ -31,6 +31,7 @@
 import { RelayPeer, b64url } from './transport.js';
 import { DocView } from './model/view.js';
 import { compute, RuleError } from './model/rules.js';
+import { record, revert, describe } from './model/undo.js';
 import { DATA_VERSION, upgrade } from './model/migrations.js';
 export { byPosition, bySlot } from './model/rules.js';
 
@@ -43,6 +44,9 @@ const SLOW_REPLY = 5000;       // a reply slower than this triggers a probe
 const REQUEST_TIMEOUT = 15000; // give up on a reply
 const CONFLICT_RETRIES = 6;    // recompute this many times when someone else changed the same thing
 const OUTBOX_MAX_AGE = 6 * 3600 * 1000; // queued edits older than this are dropped
+const UNDO_STEPS = 50;         // how many of this tab's changes can be undone
+const NOT_UNDOABLE = op => op.startsWith('roller_');   // dice and the mat are left out
+const UNDO_TOAST_OPS = new Set(['delete_character', 'monster_remove', 'person_remove', 'remove_child']);
 const QUEUED_OPS = new Set(['save_field', 'rename_child', 'add_child',
   'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section', 'person_save']);
 
@@ -67,6 +71,7 @@ export class Data {
     this.backoff = 1000; this.failures = 0;
     this.outboxKey = 'trophy-outbox:' + cfg.base + '/' + cfg.room;
     this.outbox = this.loadOutbox(); this.sending = null;
+    this.history = []; this.future = []; this.reverting = false; // undo / redo of this tab's own changes
 
     const wake = () => { if (this.status === 'outdated') return; this.peer ? this.probe() : this.reconnectSoon(0); };
     addEventListener('online', wake);
@@ -172,6 +177,7 @@ export class Data {
     if (m.t === 'snap') {
       if (m.protocol !== PROTOCOL) return this.outdated(`This page (version ${PROTOCOL}) and the relay (version ${m.protocol ?? '?'}) don't match. Reload the page; if that doesn't help, redeploy the worker.`);
       this.locks = m.locks || {}; this.me = m.you; this.epoch = m.epoch; this.seq = m.seq;
+      if (this.dataVersion != null && m.dataVersion !== this.dataVersion) this.clearHistory();
       this.dataVersion = m.dataVersion;
       if (m.dataVersion > DATA_VERSION) return this.outdated('The game data was upgraded by a newer version of this page. Reload the page.');
       if (m.dataVersion < DATA_VERSION) return this.upgradeRoom(m);
@@ -238,20 +244,16 @@ export class Data {
     });
   }
 
-  // Compute an operation from the local data and send it; on a conflict (someone else changed
-  // the same thing first) compute again from the fresh data. The same oid is kept throughout,
-  // so a resend after a lost reply is applied only once.
-  async run(op, args = {}, { oid = newOid(), release } = {}) {
+  // Send a batch computed by make() from the local data; on a conflict (someone else changed
+  // the same thing first) compute it again from the fresh data. The same oid is kept
+  // throughout, so a resend after a lost reply is applied only once.
+  async sendComputed(make, { oid = newOid(), release } = {}) {
     for (let attempt = 0; attempt < CONFLICT_RETRIES; attempt++) {
-      let batch;
-      try { batch = compute(this.view, op, args); } catch (e) {
-        if (e instanceof RuleError) throw refused(e.message);
-        throw e;
-      }
-      if (!batch.writes.length) { if (release) this.unlock(release); return batch.result; }
+      const batch = make();
+      if (!batch.writes.length) { if (release) this.unlock(release); return batch; }
       try {
         await this.request({ t: 'write', oid, version: this.dataVersion, writes: batch.writes, result: batch.result, release });
-        return batch.result;
+        return batch;
       } catch (e) {
         if (e.code !== 'conflict') throw e;
         // the other change reaches this page before (or soon after) the refusal
@@ -259,6 +261,82 @@ export class Data {
       }
     }
     throw refused('Too many changes at the same moment — try again.');
+  }
+
+  // Run a game operation (model/rules.js) and remember it for Undo.
+  async run(op, args = {}, opts = {}) {
+    const label = describe(this.view, op, args); // named before the change (e.g. before a delete)
+    let step = null;
+    const batch = await this.sendComputed(() => {
+      let b;
+      try { b = compute(this.view, op, args); } catch (e) {
+        if (e instanceof RuleError) throw refused(e.message);
+        throw e;
+      }
+      step = NOT_UNDOABLE(op) ? null : record(this.view, b.writes, label);
+      return b;
+    }, opts);
+    if (step && batch.writes.length) {
+      this.history.push(step);
+      if (this.history.length > UNDO_STEPS) this.history.shift();
+      this.future = [];
+      if (UNDO_TOAST_OPS.has(op)) this.notice(label.charAt(0).toUpperCase() + label.slice(1) + '.', { undo: step });
+      this.changed();
+    }
+    return batch.result;
+  }
+
+  // --- undo / redo (model/undo.js) ------------------------------------------------
+  get undoLabel() { return this.history.at(-1)?.label ?? null; }
+  get redoLabel() { return this.future.at(-1)?.label ?? null; }
+  undo() { return this.revertStep(this.history, this.future, 'Undone'); }
+  // The Undo button in a message: undo that step, if nothing has been done since.
+  undoStep(step) {
+    if (this.history.at(-1) !== step) return this.notice('Other changes were made after that; use ↶ to undo them in turn.');
+    return this.undo();
+  }
+  redo() { return this.revertStep(this.future, this.history, 'Redone'); }
+  clearHistory() { this.history = []; this.future = []; }
+
+  async revertStep(from, to, verb) {
+    if (this.reverting || !from.length) return;
+    if (this.outbox.length) return this.notice('Wait a moment: a change is still being saved.');
+    if (this.status !== 'live') return this.notice('Not connected — try again in a moment.');
+    const step = from.at(-1);
+    if (this.lockKeysOf(step).some(k => this.lockedByOther(k))) return this.notice(`Someone is editing that right now (${step.label}); try again in a moment.`);
+    this.reverting = true; this.changed();
+    try {
+      let result, next;
+      await this.sendComputed(() => {
+        result = revert(this.view, step);
+        next = record(this.view, result.writes, step.label);
+        return { writes: result.writes, result: null };
+      });
+      from.pop();
+      if (result.writes.length) {
+        to.push(next);
+        this.notice(`${verb}: ${step.label}` + (result.skipped.length ? ' — except what someone else has changed since.' : '.'));
+      } else {
+        this.notice(`Nothing to ${verb === 'Undone' ? 'undo' : 'redo'} for "${step.label}": someone else has changed it since.`);
+      }
+    } catch (e) {
+      this.notice(e.message);
+    } finally {
+      this.reverting = false; this.changed();
+    }
+  }
+
+  // The field locks that cover what a step would change (see the views for the key formats).
+  lockKeysOf(step) {
+    return step.changes.flatMap(c => {
+      const [kind, id] = c.key.split('/');
+      const fields = c.fields || Object.keys({ ...c.before, ...c.after });
+      if (kind === 'character') return fields.map(f => `${id}:${f}`);
+      if (kind === 'monster') return fields.flatMap(f => f === 'habits' ? [1, 2, 3, 4, 5, 6].map(n => `monster:${id}:habit:${n}`) : [`monster:${id}:${f}`]);
+      if (kind === 'person') return fields.map(f => `person:${id}:${f}`);
+      const character = (c.after || c.before)?.character;
+      return character ? [`${character}:${kind}:${id}`] : [];
+    });
   }
 
   // A write that needs the connection now (clicks). Rejects when offline.
@@ -310,6 +388,7 @@ export class Data {
   // Export/import/backups. Imports and restores come in any known layout and are upgraded here.
   exportData() { return this.request({ t: 'export' }); }
   importDocs(dataVersion, docs) {
+    this.clearHistory();
     return this.request({ t: 'import', version: DATA_VERSION, docs: upgrade(dataVersion, { docs }) });
   }
   listBackups() { return this.request({ t: 'backups' }); }

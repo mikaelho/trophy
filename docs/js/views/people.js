@@ -67,7 +67,7 @@ export function people(app) {
         <div class="grow"><div class="field-label">Name</div>${input('name')}</div>
         <div class="grow2"><div class="field-label">Title</div>${input('title', 'short description')}</div>
         <button class="btn btn-ghost btn-xs text-error" title="Remove"
-          @click=${() => { if (confirm(`Remove ${p.name.trim() || 'this person'}?`)) act('person_remove', { id: p.id }); }}>&times;</button>
+          @click=${() => act('person_remove', { id: p.id })}>&times;</button>
       </div>
       <div class="field-label">Location</div>${input('location')}
       <div class="card-head center"><div class="field-label">Look</div>${addOne('look')}</div>

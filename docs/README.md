@@ -23,6 +23,7 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
   from older layouts, the previous relay version and Django dumps
 - `js/model/rules.js` – every game operation (ported from the Django app's `alive_hooks.py`)
 - `js/model/view.js` – reading the documents (`get`, `all`, `childrenOf`)
+- `js/model/undo.js` – undo/redo at the document level (see below)
 - `js/transport.js` – the relay client, copied from vod-js
 - `js/ui.js` – edit-field behaviour, markdown, small helpers
 - `js/views/characters.js` – character list and sheet
@@ -38,6 +39,18 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `lists/` – copy of `trophy/lists/` (the page fetches these; GitHub Pages only serves this folder)
 - `vendor/` – third-party code, nothing loads from a CDN:
   lit-html 3.3.3 (built from the lit repo sources), marked 18.0.10, DOMPurify 3.4.14
+
+## Undo
+
+↶ ↷ in the top bar, or Ctrl/⌘+Z and Ctrl/⌘+Shift+Z (Ctrl+Y) when the cursor is not in a text
+field; inside a field the keys keep doing the browser's own undo of the typing. Each tab undoes
+its own changes, one action at a time (the last 50; a reload starts afresh): field saves,
+adds, removals, deletes, flags and counters. Roller dice are left out. Deleting a character,
+monster or person no longer asks; the message after it has an Undo button.
+
+Undo puts back only what is still as this tab left it: a field someone else has changed since
+is kept (the message says so), a record someone has edited since is not removed, and a field
+someone is editing right now is not touched. Upgrades and imports clear the history.
 
 ## Changing the data layout
 

@@ -43,7 +43,7 @@ export function bestiary(app) {
         <div class="grow"><div class="field-label">Name</div>${input('name')}</div>
         <div class="grow2"><div class="field-label">Description</div>${input('description')}</div>
         <button class="btn btn-ghost btn-xs text-error" title="Remove"
-          @click=${() => { if (confirm('Remove?')) act('monster_remove', { id: m.id }); }}>&times;</button>
+          @click=${() => act('monster_remove', { id: m.id })}>&times;</button>
       </div>
       <div class="field-label">Habits</div>
       <div class="habits">${habits.map((text, i) => {

@@ -143,8 +143,8 @@ export function characterSheet(app, id) {
     const word = await app.randomDescriptor();
     if (word) op('append_look', { word });
   };
+  // No confirmation: the message after deleting has an Undo button.
   const deleteCharacter = async () => {
-    if (!confirm('Delete this character?')) return;
     if (await act(data.op('delete_character', { id: c.id })) !== undefined) app.nav({});
   };
 

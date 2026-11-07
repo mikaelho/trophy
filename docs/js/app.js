@@ -207,6 +207,12 @@ function frame(content) {
       <a class="brand" href=${app.href({})} @click=${app.link}>Trophy</a>
       <nav>${NAV.filter(([view]) => gm || !GM_VIEWS.has(view)).map(([view, title]) => html`<a href=${app.href({ view })} @click=${app.link}
         class=${navView() === view ? 'active' : ''}>${title}</a>`)}</nav>
+      <span class="undo-redo">
+        <button class="btn btn-ghost btn-sm" title=${d.undoLabel ? `Undo: ${d.undoLabel} (${MOD}Z)` : 'Nothing to undo'}
+          aria-label="Undo" ?disabled=${!d.undoLabel || d.reverting} @click=${() => d.undo()}>↶</button>
+        <button class="btn btn-ghost btn-sm" title=${d.redoLabel ? `Redo: ${d.redoLabel} (${MOD}⇧Z)` : 'Nothing to redo'}
+          aria-label="Redo" ?disabled=${!d.redoLabel || d.reverting} @click=${() => d.redo()}>↷</button>
+      </span>
       <span class="status ${d.status}" title=${label}><span class="dot"></span><span class="label">${label}</span></span>
       <details class="menu">
         <summary class="btn btn-ghost btn-sm">⋯</summary>
@@ -254,9 +260,20 @@ function setupPage() {
 }
 
 installKeys();
+// Undo / redo of this tab's own changes: Ctrl/⌘+Z, Ctrl/⌘+Shift+Z or Ctrl+Y. Inside a text
+// field the keys keep doing the browser's own undo of the typing.
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
+document.addEventListener('keydown', e => {
+  if (!app.data || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const t = e.target;
+  if (t instanceof HTMLElement && (t.isContentEditable || t.matches('input, textarea, select'))) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); app.data.undo(); }
+  else if ((k === 'z' && e.shiftKey) || (k === 'y' && e.ctrlKey)) { e.preventDefault(); app.data.redo(); }
+});
 if (cfg) {
   app.data = new Data(cfg);
-  app.data.notice = toast;
+  app.data.notice = (msg, { undo } = {}) => toast(msg, undo ? { action: { label: 'Undo', fn: () => app.data.undoStep(undo) } } : {});
   app.data.subscribe(() => app.render());
 }
 draw();

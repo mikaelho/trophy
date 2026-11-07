@@ -76,12 +76,19 @@ export function markdownInline(text) {
 }
 
 // A message shown briefly at the bottom of the page.
+// action: {label, fn} adds a button (e.g. Undo) and keeps the message up a little longer.
 let toastTimer;
-export function toast(msg) {
+export function toast(msg, { action } = {}) {
   const el = document.getElementById('toast');
   if (!el) return;
-  el.textContent = msg; el.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
+  el.replaceChildren(document.createTextNode(msg));
+  if (action) {
+    const b = Object.assign(document.createElement('button'), { className: 'toast-action', textContent: action.label });
+    b.onclick = () => { el.hidden = true; action.fn(); };
+    el.append(b);
+  }
+  el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, action ? 7000 : 4000);
 }
 // Run an op and report a failure without throwing.
 export function attempt(promise) {
