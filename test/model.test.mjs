@@ -305,3 +305,17 @@ test('version 2: equipment of existing people becomes a comma-separated list, no
   assert.equal(store.getDoc('person/a').data.equipment, 'Rusty lantern, Ferry pole, Rope');
   assert.equal(store.listBackups()[0].dataVersion, 1);
 });
+
+test('notes: add, edit, remove', () => {
+  const { page, run } = setup();
+  const v = page();
+  const { id } = run(v, 'note_add');
+  const { id: id2 } = run(v, 'note_add');
+  assert.equal(v.get('note', id2).position, 1);
+  run(v, 'note_save', { id, field: 'title', value: '  The Baron ' });
+  run(v, 'note_save', { id, field: 'description', value: 'Owes the ferry keeper.\nHides in the tower.' });
+  assert.throws(() => compute(v, 'note_save', { id, field: 'name', value: 'x' }), /Unknown field/);
+  assert.deepEqual([v.get('note', id).title, v.get('note', id).description], ['The Baron', 'Owes the ferry keeper.\nHides in the tower.']);
+  run(v, 'note_remove', { id });
+  assert.equal(v.get('note', id), null);
+});

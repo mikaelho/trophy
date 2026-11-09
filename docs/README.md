@@ -7,7 +7,7 @@ keeps a full copy of the (small) data; changes go to the relay as batches of doc
 and the relay passes them to everyone, so all views stay live like the Django + alive version.
 
 All pages of the Django app are ported: Characters (list and sheet), Overview, Roller,
-Bestiary and Equipment, plus People (supporting characters). Overview, Equipment and People are the GM's pages,
+Bestiary and Equipment, plus People (supporting characters) and Notes. Overview, Equipment, People and Notes are the GM's pages,
 shown only in **GM mode** (⋯ menu), a setting of each browser. On the Roller, the browser whose Roll button is clicked rolls the
 dice and the relay passes the faces to everyone; Equipment rolls are each viewer's own, as before.
 
@@ -33,7 +33,11 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `js/views/equipment.js` – 2d6 rolls on the equipment tables (GM mode)
 - `js/views/people.js` – supporting characters (GM mode): generated Look (three descriptors) and
   Equipment (one roll on each equipment table) as comma-separated lists, then freely edited;
-  the die buttons add one more; filter per viewer
+  the die buttons add one more. Cards open and close (closed: name and title), search per viewer
+- `js/views/notes.js` – the GM's notes: title and description, cards that open and close
+  (closed: title), search over both
+- `js/views/records.js` – shared parts of People and Notes: locking text fields, open/closed
+  cards (each viewer's own, kept for the tab), search
 - `js/lists.js` – loads `lists/`: descriptors and the d6/d6 tables (named in `TABLES` there,
   since GitHub Pages cannot list a folder)
 - `lists/` – copy of `trophy/lists/` (the page fetches these; GitHub Pages only serves this folder)

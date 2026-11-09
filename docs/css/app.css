@@ -311,8 +311,8 @@ table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
 .status.upgrading .dot { background: var(--warning); }
 
 /* --- people -------------------------------------------------------------------------------- */
-.people { display: flex; flex-direction: column; gap: 1rem; }
-.person-box { border: 1px solid var(--base-300); border-radius: var(--radius); background: var(--base-100); padding: 0.85rem; }
+.people { display: flex; flex-direction: column; }
+.person-box { border: 1px solid var(--base-300); border-radius: var(--radius); background: var(--base-100); }
 .person-box .field-label { font-size: 0.6rem; letter-spacing: 0.06em; margin-top: 0.5rem; }
 .person-box .card-head .field-label { margin-top: 0; }
 .person-box .card-head { margin-top: 0.4rem; }
@@ -332,3 +332,22 @@ table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
   padding: 0.15rem 0.6rem; font-weight: 600; cursor: pointer;
 }
 .toast[hidden] { display: none; }
+
+/* --- record lists (People, Notes): cards that open and close --------------------------------- */
+.records { display: flex; flex-direction: column; gap: 0.5rem; }
+.record { padding: 0; }
+.note-box { border: 1px solid var(--base-300); border-radius: var(--radius); background: var(--base-100); }
+.record-head {
+  display: flex; align-items: baseline; gap: 0.6rem; width: 100%; padding: 0.6rem 0.85rem; min-width: 0;
+  background: none; border: none; text-align: left; cursor: pointer; border-radius: var(--radius);
+}
+.record-head:hover { background: color-mix(in oklab, var(--base-content) 5%, transparent); }
+.record-arrow { opacity: 0.5; width: 0.8rem; flex: none; font-size: 0.8rem; }
+.record-main { font-weight: 600; flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-sub { opacity: 0.6; font-size: 0.875rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record.open .record-head { border-bottom: 1px solid var(--base-300); border-radius: var(--radius) var(--radius) 0 0; }
+.record-body { padding: 0.4rem 0.85rem 0.85rem; }
+.record-body .field-label { font-size: 0.6rem; letter-spacing: 0.06em; margin-top: 0.5rem; }
+.record-body .person-top .field-label { margin-top: 0; }
+.record-body .textarea { min-height: 2rem; font-size: 0.85rem; }
+.record-search { width: 9rem; height: 2rem; }

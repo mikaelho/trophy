@@ -46,9 +46,9 @@ const CONFLICT_RETRIES = 6;    // recompute this many times when someone else ch
 const OUTBOX_MAX_AGE = 6 * 3600 * 1000; // queued edits older than this are dropped
 const UNDO_STEPS = 50;         // how many of this tab's changes can be undone
 const NOT_UNDOABLE = op => op.startsWith('roller_');   // dice and the mat are left out
-const UNDO_TOAST_OPS = new Set(['delete_character', 'monster_remove', 'person_remove', 'remove_child']);
+const UNDO_TOAST_OPS = new Set(['delete_character', 'monster_remove', 'person_remove', 'note_remove', 'remove_child']);
 const QUEUED_OPS = new Set(['save_field', 'rename_child', 'add_child',
-  'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section', 'person_save']);
+  'monster_save', 'monster_save_habit', 'roller_rename_section', 'roller_add_section', 'person_save', 'note_save']);
 
 const newOid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const refused = (message, extra = {}) => Object.assign(new Error(message), { refused: true }, extra);
@@ -333,7 +333,7 @@ export class Data {
       const fields = c.fields || Object.keys({ ...c.before, ...c.after });
       if (kind === 'character') return fields.map(f => `${id}:${f}`);
       if (kind === 'monster') return fields.flatMap(f => f === 'habits' ? [1, 2, 3, 4, 5, 6].map(n => `monster:${id}:habit:${n}`) : [`monster:${id}:${f}`]);
-      if (kind === 'person') return fields.map(f => `person:${id}:${f}`);
+      if (kind === 'person' || kind === 'note') return fields.map(f => `${kind}:${id}:${f}`);
       const character = (c.after || c.before)?.character;
       return character ? [`${character}:${kind}:${id}`] : [];
     });

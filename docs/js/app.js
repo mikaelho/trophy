@@ -14,6 +14,7 @@ import { roller } from './views/roller.js';
 import { bestiary } from './views/bestiary.js';
 import { equipment } from './views/equipment.js';
 import { people } from './views/people.js';
+import { notes } from './views/notes.js';
 
 const root = document.getElementById('app');
 const SAVED = 'trophy-relay';
@@ -48,7 +49,7 @@ const applyTheme = t => {
 };
 let theme = (() => { try { return localStorage.getItem(THEME) || 'auto'; } catch (_) { return 'auto'; } })();
 applyTheme(theme);
-// GM mode: shows the GM's pages (Overview, Equipment, People). A setting of this browser only.
+// GM mode: shows the GM's pages (Overview, Equipment, People, Notes). A setting of this browser only.
 const GM = 'trophy-gm';
 let gm = (() => { try { return localStorage.getItem(GM) === '1'; } catch (_) { return false; } })();
 const toggleGm = () => {
@@ -56,7 +57,7 @@ const toggleGm = () => {
   try { localStorage.setItem(GM, gm ? '1' : '0'); } catch (_) {}
   if (!gm && GM_VIEWS.has(app.route().view)) app.nav({}); else app.render();
 };
-const GM_VIEWS = new Set(['overview', 'equipment', 'people']);
+const GM_VIEWS = new Set(['overview', 'equipment', 'people', 'notes']);
 
 const cycleTheme = () => {
   theme = { auto: 'light', light: 'dark', dark: 'auto' }[theme] || 'auto';
@@ -178,12 +179,13 @@ function page() {
   if (view === 'roller') return roller(app);
   if (view === 'bestiary') return bestiary(app);
   if (view === 'people' && gm) return people(app);
+  if (view === 'notes' && gm) return notes(app);
   if (view === 'equipment' && gm) return equipment(app);
   if (view === 'backups') return backupsPage();
   return characterList(app);
 }
 
-const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['people', 'People'], ['equipment', 'Equipment']];
+const NAV = [['', 'Characters'], ['overview', 'Overview'], ['roller', 'Roller'], ['bestiary', 'Bestiary'], ['people', 'People'], ['notes', 'Notes'], ['equipment', 'Equipment']];
 const navView = () => { const { view } = app.route(); return view === 'character' || (GM_VIEWS.has(view) && !gm) ? '' : view; };
 
 const statusText = { connecting: 'Connecting…', upgrading: 'Upgrading the game data…', live: 'Connected', offline: 'Reconnecting…', outdated: 'Update needed' };

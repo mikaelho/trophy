@@ -11,6 +11,7 @@
 //   monster/<id>     {endurance, name, description, habits: [6 strings], defences, weakness, position, created_at}
 //   person/<id>      {name, title, location, look, equipment, description, position, created_at}
 //                    (supporting characters; look and equipment are comma-separated lists)
+//   note/<id>        {title, description, position, created_at}   (the GM's notes)
 //
 // Version 2: person equipment changed from one item per line to a comma-separated list.
 // `character` in child records is the character's id. created_at is an ISO time.

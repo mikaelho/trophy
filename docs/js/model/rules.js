@@ -267,6 +267,26 @@ Object.assign(RULES, {
   },
 });
 
+// --- notes: the GM's notes, a title and a description ------------------------------------
+const NOTE_TEXT = { title: 200, description: 50000 };
+function note(db, id) {
+  const n = db.get('note', id);
+  if (!n) throw new RuleError('This note no longer exists.');
+  return n;
+}
+Object.assign(RULES, {
+  note_add(db) {
+    const id = newId();
+    return done([put('note', id, { title: '', description: '', position: nextPosition(db.all('note')), created_at: new Date().toISOString() }, 0)], { id });
+  },
+  note_save(db, { id, field, value }) {
+    const n = note(db, id);
+    if (!(field in NOTE_TEXT)) throw new RuleError('Unknown field: ' + field);
+    return done([patch('note', n, { [field]: cut(String(value ?? '').trim(), NOTE_TEXT[field]) }, false)]);
+  },
+  note_remove(db, { id }) { const n = note(db, id); return done([del('note', n.id)]); },
+});
+
 export function compute(db, op, args = {}) {
   const fn = RULES[op];
   if (!fn) throw new RuleError('Unknown operation: ' + op);

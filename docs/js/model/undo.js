@@ -104,6 +104,9 @@ export function describe(view, op, args = {}) {
     case 'person_add': return 'new person';
     case 'person_remove': return `delete ${person(args.id)}`;
     case 'person_save': case 'person_append': return `${person(args.id)}: ${field(args.field)}`;
+    case 'note_add': return 'new note';
+    case 'note_remove': return `delete note ${quote(view.get('note', args.id)?.title) || ''}`.trim();
+    case 'note_save': return `note ${quote(view.get('note', args.id)?.title)}: ${field(args.field)}`.replace('note : ', 'note: ');
     default: return field(op);
   }
 }
