@@ -14,7 +14,9 @@ export function roller(app) {
   // Roll every die shown here: {dieId: face}.
   const roll = dice => Object.fromEntries(dice.map(d => [d.id, rollD6()]));
 
-  const die = d => html`<span class="die" ${spin(d.value ? `${d.value}:${d.roll || 0}` : null)}>${dieSvg(d.color, d.value)}</span>`;
+  // A die not rolled yet shows its six face, dimmed so it doesn't read as a rolled 6.
+  const die = d => html`<span class="die ${d.value ? '' : 'unrolled'}" title=${d.value ? nothing : 'Not rolled yet'}
+    ${spin(d.value ? `${d.value}:${d.roll || 0}` : null)}>${dieSvg(d.color, d.value)}</span>`;
   const addButtons = (onAdd, size) => ['light', 'dark'].map(color => html`
     <button class="add-die" title=${`Add a ${color} die`} @click=${() => onAdd(color)}>${dieSvg(color, null, size)}</button>`);
   const hint = small => html`<span class="hint-text ${small ? 'small' : ''}">Add light or dark dice, then Roll.</span>`;

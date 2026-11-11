@@ -225,6 +225,8 @@ input[type=number] { text-align: right; }
 .die-pip-light { fill: #18181b; }
 .die-face-dark { fill: #1c1c1e; stroke: #6b7280; stroke-width: 1.2; }
 .die-pip-dark { fill: #fafafa; }
+.die-ring-light { fill: none; stroke: #18181b; stroke-width: 1.4; }
+.die-ring-dark { fill: none; stroke: #fafafa; stroke-width: 1.4; }
 .die { display: inline-flex; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.4)); }
 .die-svg { width: 2.25rem; height: 2.25rem; }
 .die-svg.big { width: 2.75rem; height: 2.75rem; }
@@ -351,3 +353,4 @@ table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
 .record-body .person-top .field-label { margin-top: 0; }
 .record-body .textarea { min-height: 2rem; font-size: 0.85rem; }
 .record-search { width: 9rem; height: 2rem; }
+.die.unrolled { opacity: 0.45; }
