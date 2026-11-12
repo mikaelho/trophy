@@ -52,7 +52,7 @@ export const random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 **
 // One d6 roll, 1 to 6.
 export const rollD6 = () => 1 + Math.floor(random() * 6);
 
-// A d6 face. Light = pale face with dark marks, dark = the reverse, the same in both themes.
+// A Roller d6 face. Light = pale face with dark marks, dark = the reverse, the same in both themes.
 // 1-3 are hollow rings, 4-5 filled pips, and 6 is a dragon emblem (below). No value draws the six (an unrolled die; the roller dims those).
 const PIPS = {
   1: [[20, 20]], 2: [[29, 11], [11, 29]], 3: [[29, 11], [20, 20], [11, 29]],
@@ -70,6 +70,17 @@ export function dieSvg(color, value, cls = 'die-svg') {
     ${face === 6 ? dragon(color) : PIPS[face].map(([x, y]) => face <= 3
       ? svg`<circle cx=${x} cy=${y} r="3.3" class=${'die-ring-' + color}/>`
       : svg`<circle cx=${x} cy=${y} r="3.6" class=${'die-pip-' + color}/>`)}
+  </svg>`;
+}
+
+// A plain die with standard pips, for everywhere but the Roller: dark on a light page, light
+// on a dark page (colours in the CSS). No value shows a six.
+const PLAIN = { ...PIPS, 6: [[11, 11], [29, 11], [11, 20], [29, 20], [11, 29], [29, 29]] };
+export function plainDieSvg(value, cls = 'die-svg') {
+  const face = PLAIN[value] ? value : 6;
+  return svg`<svg viewBox="0 0 40 40" class=${cls} role="img" aria-label=${value ? `die showing ${value}` : 'die'}>
+    <rect x="2" y="2" width="36" height="36" rx="6" class="die-face-plain"/>
+    ${PLAIN[face].map(([x, y]) => svg`<circle cx=${x} cy=${y} r="3.6" class="die-pip-plain"/>`)}
   </svg>`;
 }
 
@@ -123,9 +134,5 @@ export function installKeys() {
   document.addEventListener('focusin', e => { if (e.target.matches?.('textarea[data-edit]')) grow(e.target); });
 }
 
-export const dieIcon = html`<svg viewBox="0 0 40 40" class="icon" aria-hidden="true">
-  <rect x="2" y="2" width="36" height="36" rx="6" fill="#ffffff" stroke="#6b7280" stroke-width="2"/>
-  <circle cx="11" cy="11" r="3.6" fill="#18181b"/><circle cx="29" cy="11" r="3.6" fill="#18181b"/>
-  <circle cx="11" cy="20" r="3.6" fill="#18181b"/><circle cx="29" cy="20" r="3.6" fill="#18181b"/>
-  <circle cx="11" cy="29" r="3.6" fill="#18181b"/><circle cx="29" cy="29" r="3.6" fill="#18181b"/>
-</svg>`;
+// The die button of the randomisers: a plain six.
+export const dieIcon = plainDieSvg(6, 'icon');

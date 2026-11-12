@@ -227,6 +227,14 @@ input[type=number] { text-align: right; }
 .die-pip-dark { fill: #fafafa; }
 .die-ring-light { fill: none; stroke: #18181b; stroke-width: 1.4; }
 .die-ring-dark { fill: none; stroke: #fafafa; stroke-width: 1.4; }
+/* The plain die outside the Roller: standard pips, the opposite of the page's theme
+   (a dark die on a light page, a light die on a dark page). */
+:root { --die-face: #1c1c1e; --die-pip: #fafafa; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --die-face: #ffffff; --die-pip: #18181b; } }
+:root[data-theme="dark"] { --die-face: #ffffff; --die-pip: #18181b; }
+.die-face-plain { fill: var(--die-face); stroke: #6b7280; stroke-width: 1.2; }
+.die-pip-plain { fill: var(--die-pip); }
+.icon .die-face-plain { stroke-width: 2; }
 .die { display: inline-flex; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.4)); }
 .die-svg { width: 2.25rem; height: 2.25rem; }
 .die-svg.big { width: 2.75rem; height: 2.75rem; }

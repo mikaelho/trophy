@@ -2,7 +2,7 @@
 // trophy/alive_hooks.py. Rolls 2d6 on the Markdown tables in lists/. Like the Django app,
 // each viewer's rolls are their own (not shared); they are kept for this browser tab.
 import { html } from '../../vendor/lit-html/lit-html.js';
-import { spin, dieSvg, toast } from '../ui.js';
+import { spin, plainDieSvg, toast } from '../ui.js';
 import { loadTables, rollOn, tableResult } from '../lists.js';
 
 const ROLLS_KEY = 'trophy-equipment-rolls';
@@ -33,8 +33,8 @@ export function equipment(app) {
             const r = rolls[t.key];
             return html`<div class="eq-row">
               <button class="btn btn-sm btn-primary" @click=${() => doRoll(t)}>Roll</button>
-              <span class="die" ${spin(r ? `${r.d1}:${r.n}` : null)}>${dieSvg('light', r?.d1)}</span>
-              <span class="die" ${spin(r ? `${r.d2}:${r.n}` : null)}>${dieSvg('light', r?.d2)}</span>
+              <span class="die" ${spin(r ? `${r.d1}:${r.n}` : null)}>${plainDieSvg(r?.d1)}</span>
+              <span class="die" ${spin(r ? `${r.d2}:${r.n}` : null)}>${plainDieSvg(r?.d2)}</span>
               <div class="eq-text"><span class="eq-title">${t.title}</span>${r ? html`<span class="dim-text"> — </span><span>${r.result}</span>` : ''}</div>
             </div>`;
           })}

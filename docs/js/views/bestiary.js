@@ -2,7 +2,7 @@
 // trophy/alive_hooks.py. Fields lock while someone edits them, like the character sheet.
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { repeat } from '../../vendor/lit-html/directives/repeat.js';
-import { editValue, attempt, dieSvg } from '../ui.js';
+import { editValue, attempt, plainDieSvg } from '../ui.js';
 import { compareIds } from '../model/rules.js';
 
 const HABIT_COUNT = 6;
@@ -49,7 +49,7 @@ export function bestiary(app) {
       <div class="habits">${habits.map((text, i) => {
         const n = i + 1;
         const current = data.queued('monster_save_habit', { id: m.id, n }, 'value') ?? text;
-        return html`<div class="habit"><span class="die habit-die">${dieSvg('light', n)}</span>${field(`habit:${n}`, current,
+        return html`<div class="habit"><span class="die habit-die">${plainDieSvg(n)}</span>${field(`habit:${n}`, current,
           (value, k) => data.edit('monster_save_habit', { id: m.id, n, value }, k), p => html`
           <input class="input input-xs ${p.cls}" data-edit autocomplete="off" .value=${p.value}
             ?disabled=${p.disabled} title=${p.title} @focus=${p.focus} @blur=${p.blur} />`)}</div>`;
