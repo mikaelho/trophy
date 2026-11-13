@@ -83,7 +83,7 @@ function rolled(dice, values) {
 
 function monster(db, id) {
   const m = db.get('monster', id);
-  if (!m) throw new RuleError('This monster no longer exists.');
+  if (!m) throw new RuleError('This creature no longer exists.');
   return m;
 }
 

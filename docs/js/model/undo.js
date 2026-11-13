@@ -81,7 +81,7 @@ const quote = s => (String(s || '').trim() ? `"${String(s).trim().slice(0, 30)}"
 export function describe(view, op, args = {}) {
   const char = id => view.get('character', id)?.name?.trim() || 'a character';
   const item = (kind, id) => view.get(kind, id)?.name?.trim();
-  const monster = id => view.get('monster', id)?.name?.trim() || 'a monster';
+  const monster = id => view.get('monster', id)?.name?.trim() || 'a creature';
   const person = id => view.get('person', id)?.name?.trim() || 'a person';
   switch (op) {
     case 'new_character': return 'new character';
@@ -97,7 +97,7 @@ export function describe(view, op, args = {}) {
     case 'toggle_marked': return `mark ${quote(item('combat', args.item))}`.trim();
     case 'set_ammo': return `ammo of ${quote(item('combat', args.item))}`.trim();
     case 'adjust_uses': return `uses of ${quote(item('backpack', args.item)) || 'a backpack item'}`;
-    case 'monster_add': return 'new monster';
+    case 'monster_add': return 'new creature';
     case 'monster_remove': return `delete ${monster(args.id)}`;
     case 'monster_save': return `${monster(args.id)}: ${field(args.field)}`;
     case 'monster_save_habit': return `${monster(args.id)}: habit ${args.n}`;

@@ -105,28 +105,50 @@ const REFERENCE = html`
           <li>No — you may risk mind/body to re-roll with +1 dark die.</li>
         </ul>
       </li>
-      <li>Read the <b>highest</b> die: 1–3 fail · 4–5 success with a complication · 6 success.</li>
+      <li>Read the <b>highest</b> die:
+        <ul>
+          <li>1–3 — fail, and things get worse. Weakening a creature: you are pulled into combat.</li>
+          <li>4–5 — success with a complication. Weakening a creature: its Endurance −1, but you are
+            pulled into combat.</li>
+          <li>6 — success. Weakening a creature: its Endurance −1 (−2 with a Power).</li>
+        </ul>
+      </li>
+      <li>Pulled into combat: start a Combat Roll, or roll a Weak Point and join the next round of one.</li>
+      <li>Not while in a Combat Roll — retreat from it first.</li>
     </ul>
   </div>
   <div class="ref-card">
     <div class="ref-title">Combat Roll</div>
-    <div class="ref-sub">Defeat a monster together</div>
+    <div class="ref-sub">Defeat a creature together</div>
     <ul>
-      <li>Decide who participates.</li>
-      <li>Each participant says how they're vulnerable and rolls 1 <b>light</b> die — their Weak Point.</li>
-      <li>1 <b>dark</b> die per attacker with a usable weapon.</li>
-      <li>Did any <b>dark</b> die match a Weak Point?
+      <li>The GM announces the creature's Endurance.</li>
+      <li>Decide who fights this round; each names their weapon or Power (ranged: at least 1 unmarked
+        ammo).</li>
+      <li>Each fighter says how they're in danger and rolls 1 <b>light</b> die — their Weak Point. No
+        weapon or Power: 2 Weak Points (drop one on picking up a weapon).</li>
+      <li>Attack Pool: 1 <b>dark</b> die per fighter. Ranged: +1 <b>light</b> die per ammo slot
+        marked.</li>
+      <li>Roll the Attack Pool. Did any <b>dark</b> die match a Weak Point?
         <ul>
-          <li>Mark 1 Ruin per match, or mark a piece of Armor to avoid all Ruin.</li>
+          <li>Mark 1 Ruin per match, or mark 1 Armor to avoid all Ruin this round.</li>
         </ul>
       </li>
-      <li>Do the two highest <b>dark</b> dice total the monster's Endurance or more?
+      <li>Do the two highest dice total the creature's Endurance or more?
         <ul>
-          <li>Yes — success, the monster is defeated.</li>
-          <li>No — risk more: +1 dark die and re-roll.</li>
+          <li>Yes — the creature is defeated; make a Harvest Roll.</li>
+          <li>No — narrate, then retreat or recruit:
+            <ul>
+              <li>Full retreat — combat ends; the GM may call for Risk Rolls to escape.</li>
+              <li>Partial retreat — hand your Weak Point die to someone still fighting (re-roll it if
+                it shows their number; they now take hits on either number, one Armor still covers
+                both); the dark dice stay.</li>
+              <li>Recruit — a newcomer rolls a Weak Point and adds 1 <b>dark</b> die.</li>
+            </ul>
+          </li>
+          <li>Next round: +1 <b>dark</b> die and roll the Attack Pool again.</li>
         </ul>
       </li>
-      <li>Harvest: roll dice equal to the monster's Endurance; each 6 scavenges 1 Coin.</li>
+      <li>Harvest Roll: dice equal to the creature's final Endurance; each 6 is worth 1 Coin.</li>
     </ul>
   </div>
   <div class="ref-card">
