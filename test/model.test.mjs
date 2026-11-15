@@ -109,7 +109,7 @@ test('new character gets six backpack slots', () => {
   const { id } = run(v, 'new_character');
   assert.equal(v.childrenOf('backpack', id).length, 6);
   const c = v.get('character', id);
-  assert.equal(ruinOf(v, c), 1, 'Ruin starts at 1'); assert.equal(burdenOf(v, c), 0); assert.equal(coinOf(v, c), 0);
+  assert.equal(ruinOf(v, c), 1, 'Ruin starts at 1'); assert.equal(burdenOf(v, c), 1, 'so do Burdens'); assert.equal(coinOf(v, c), 0);
   assert.equal(c.hireling, false); assert.match(c.created_at, /Z$/);
   assert.equal(c.ruin, undefined); assert.equal(c.coin, undefined);
 });
@@ -121,13 +121,13 @@ test('ledgers: lines add up, are edited and removed; lists no longer change Ruin
   for (const n of ['a', 'b', 'c', 'd']) run(v, 'add_child', { id, kind: 'power', name: n });
   run(v, 'add_child', { id, kind: 'combat', name: 'Spear', combat_kind: 'weapon' });
   const c = () => v.get('character', id);
-  assert.equal(ruinOf(v, c()), 1); assert.equal(burdenOf(v, c()), 0);
+  assert.equal(ruinOf(v, c()), 1); assert.equal(burdenOf(v, c()), 1);
   const r1 = run(v, 'ledger_add', { id, field: 'ruin', amount: '+1', description: ' Power: Ward ' }).id;
   run(v, 'ledger_add', { id, field: 'ruin', amount: '2', description: 'Bad night' });
   run(v, 'ledger_add', { id, field: 'coin', amount: '+12', description: 'Sold the hide' });
   const spent = run(v, 'ledger_add', { id, field: 'coin', amount: '−5', description: 'Rope' }).id;
   run(v, 'ledger_add', { id, field: 'burden', amount: '+1', description: '' });
-  assert.equal(ruinOf(v, c()), 4); assert.equal(coinOf(v, c()), 7); assert.equal(burdenOf(v, c()), 1);
+  assert.equal(ruinOf(v, c()), 4); assert.equal(coinOf(v, c()), 7); assert.equal(burdenOf(v, c()), 2);
   assert.equal(v.get('ledger', r1).description, 'Power: Ward');
   assert.deepEqual(ledgerEntries(v, id, 'coin').map(e => e.amount), [12, -5], 'in the order added');
   run(v, 'ledger_save', { entry: spent, field: 'amount', value: '-3' });
@@ -140,12 +140,12 @@ test('ledgers: lines add up, are edited and removed; lists no longer change Ruin
   assert.throws(() => compute(v, 'ledger_add', { id, field: 'hoard', amount: '1' }), /Unknown ledger/);
   assert.throws(() => compute(v, 'ledger_save', { entry: spent, field: 'amount', value: '1.5' }), /whole number/);
   assert.throws(() => compute(v, 'save_field', { id, field: 'coin', value: 5 }), /Unknown field/);
-  // never below the minimum: Ruin 1, Burdens and Coin 0 (now Ruin 3, Coin 9, Burdens 1)
+  // never below the minimum: Ruin 1, Burdens and Coin 0 (now Ruin 3, Coin 9, Burdens 2)
   assert.throws(() => compute(v, 'ledger_add', { id, field: 'coin', amount: '-10', description: 'Too much' }), /Coin cannot go below 0 \(it would be -1\)/);
   run(v, 'ledger_add', { id, field: 'coin', amount: '-9', description: 'All of it' });
   assert.equal(coinOf(v, c()), 0);
   assert.throws(() => compute(v, 'ledger_add', { id, field: 'ruin', amount: '-3' }), /Ruin cannot go below 1/);
-  assert.throws(() => compute(v, 'ledger_add', { id, field: 'burden', amount: '-2' }), /Burdens cannot go below 0/);
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'burden', amount: '-3' }), /Burdens cannot go below 0/);
   const twelve = ledgerEntries(v, id, 'coin')[0];
   assert.throws(() => compute(v, 'ledger_remove', { entry: twelve.id }), /Coin cannot go below 0/, 'removing income that was spent');
   assert.throws(() => compute(v, 'ledger_save', { entry: twelve.id, field: 'amount', value: '+1' }), /Coin cannot go below 0/);
@@ -157,6 +157,7 @@ test('ledgers: lines add up, are edited and removed; lists no longer change Ruin
 
 test('upgrading to ledgers: the old Ruin, Burdens and Coin become one line each', () => {
   const v2 = upgrade(1, { docs: fromDjangoDump(dump) }, 2);
+  v2[Object.keys(v2).find(k => k.startsWith('character/'))].burden_offset = -50;   // one at Burdens 0
   const v3 = upgrade(2, { docs: v2 });
   const view = new DocView();
   view.load(Object.entries(v3).map(([k, d]) => [k, 1, d]));
@@ -172,8 +173,15 @@ test('upgrading to ledgers: the old Ruin, Burdens and Coin become one line each'
     assert.equal(burdenOf(view, c), burden, k);
     for (const e of view.childrenOf('ledger', id)) { assert.equal(e.description, BEFORE_LEDGER); assert.notEqual(e.amount, 0); }
     assert.equal(ledgerEntries(view, id, 'ruin').length, old.ruin > 1 ? 1 : 0, 'Ruin 1 needs no line');
+    assert.equal(ledgerEntries(view, id, 'burden').length, burden !== 1 ? 1 : 0, 'Burdens 1 needs no line');
   }
   assert.deepEqual(upgrade(2, { docs: v2 }), v3, 'the same every time (ids are not random)');
+  // a room already at version 3 (Burdens lines were the whole value): one less, 0 lines removed
+  const at3 = upgrade(2, { docs: v2 }, 3);
+  assert.deepEqual(upgrade(3, { docs: at3 }), v3);
+  const lines3 = Object.keys(at3).filter(k => k.endsWith('-burden')), lines4 = Object.keys(v3).filter(k => k.endsWith('-burden'));
+  assert.ok(lines4.length < lines3.length, 'Burdens 1 needs no line');
+  assert.ok(Object.values(v3).some(d => d.field === 'burden' && d.amount === -1), 'Burdens 0 is -1');
   const others = Object.keys(v2).filter(k => !k.startsWith('character/'));
   for (const k of others) assert.deepEqual(v3[k], v2[k], k);
 });

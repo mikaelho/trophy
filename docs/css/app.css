@@ -121,7 +121,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .checkbox.small { width: 0.95rem; height: 0.95rem; }
 .check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; cursor: pointer; }
 .check.small { font-size: 0.75rem; gap: 0.25rem; }
-input[type=number] { text-align: right; }
+input[type=number], input[data-num] { text-align: right; }
 
 /* --- character list ------------------------------------------------------------------ */
 .page-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }

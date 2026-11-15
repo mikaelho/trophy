@@ -37,7 +37,7 @@ export function ledgerDialog(app, c) {
     const k = lockKey(e, f), locked = data.lockedByOther(k);
     const value = f === 'amount' ? (() => { const n = parseAmount(shown(e, f)); return n === null ? shown(e, f) : formatAmount(n); })() : shown(e, f);
     return html`<input class="${cls} ${locked ? 'locked-field' : ''}" data-edit autocomplete="off"
-      aria-label=${f === 'amount' ? 'Amount' : 'Description'} inputmode=${f === 'amount' ? 'numeric' : nothing}
+      aria-label=${f === 'amount' ? 'Amount' : 'Description'} ?data-num=${f === 'amount'}
       .value=${editValue(value)} ?disabled=${locked} title=${locked ? LOCKED_TITLE : nothing}
       @focus=${() => data.lock(k)}
       @blur=${ev => {
@@ -64,7 +64,7 @@ export function ledgerDialog(app, c) {
       <button class="btn btn-ghost btn-sm" title="Close" @click=${close}>&times;</button>
     </div>
     <form class="ledger-add" @submit=${add}>
-      <input class="input ledger-amount" name="amount" value="+1" autocomplete="off" aria-label="Amount" />
+      <input class="input ledger-amount" name="amount" value="+1" autocomplete="off" aria-label="Amount" data-num />
       <input class="input ledger-desc" name="description" autofocus autocomplete="off"
         placeholder="What for?" aria-label="Description" />
       <button class="btn btn-primary btn-sm" type="submit">Add</button>

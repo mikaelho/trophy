@@ -19,6 +19,8 @@
 //   ledger/<id>      {character, field: 'ruin'|'burden'|'coin', amount, description, position, created_at}
 //   (Ruin starts at 1, an implied "+1 Initial" line). The upgrade turns the old values into one
 //   "Before the ledger" entry each; Burdens are no longer worked out from the lists.
+// Version 4: Burdens also start at 1 ("+1 Initial"), so the "Before the ledger" Burdens line is
+//   one less (removed when that makes it 0).
 // `character` in child records is the character's id. created_at is an ISO time.
 // A new kind of record (like person) needs no new version: pages that don't know it ignore it.
 //
@@ -31,13 +33,23 @@
 // by the relay as raw rows. Django dumps (dumpdata files, and exports of that relay version)
 // convert to version 1 with fromDjangoDump.
 
-export const DATA_VERSION = 3;
+export const DATA_VERSION = 4;
 
 const STEPS = {
   1: ({ legacy }) => v1FromRecords(recordsFromTables(legacy || {})),
   2: ({ docs }) => mapKind(docs, 'person', p => ({
     ...p, equipment: String(p.equipment ?? '').split(/\n+/).map(s => s.trim()).filter(Boolean).join(', '),
   })),  3: ({ docs }) => ledgersFromTotals(docs),
+  4: ({ docs }) => {
+    const out = {};
+    for (const [k, d] of Object.entries(docs)) {
+      if (k.startsWith('ledger/') && d.field === 'burden' && d.description === BEFORE_LEDGER && k === `ledger/${d.character}-burden`) {
+        const amount = (Number(d.amount) || 0) - 1;
+        if (amount) out[k] = { ...d, amount };
+      } else out[k] = d;
+    }
+    return out;
+  },
 };
 
 // Version 2 -> 3: the current Ruin, Burdens and Coin of each character become ledger entries.
@@ -64,7 +76,7 @@ function ledgersFromTotals(docs) {
     const totals = { ruin: (Number(ruin) || 1) - 1, burden, coin: Number(coin) || 0 };
     let position = 0;
     for (const [field, amount] of Object.entries(totals)) {
-      if (!amount) continue;
+      if (!amount && field !== 'burden') continue;   // a Burdens line of 0 becomes -1 in version 4
       out[`ledger/${id}-${field}`] = { character: id, field, amount, description: BEFORE_LEDGER, position: position++,
         created_at: d.created_at ?? null };
     }

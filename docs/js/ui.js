@@ -59,11 +59,14 @@ class Modal extends Directive {
     const el = part.element;
     if (!el._modal) {
       el._modal = true;
-      requestAnimationFrame(() => {
-        if (!el.isConnected || el.open) return;
-        el.showModal();
-        el.querySelector('[autofocus]')?.focus();
-      });
+      // Right after this render (so no key typed after the click is lost), or a frame later.
+      const open = () => {
+        if (el.open) return true;
+        if (!el.isConnected) return false;
+        el.showModal(); el.querySelector('[autofocus]')?.focus();
+        return true;
+      };
+      queueMicrotask(() => open() || requestAnimationFrame(open));
     }
     return noChange;
   }
@@ -154,6 +157,16 @@ export function installKeys() {
     const commit = isTextarea ? e.key === 'Enter' && (e.metaKey || e.ctrlKey) : e.key === 'Enter';
     if (commit) { e.preventDefault(); t.blur(); }
     else if (e.key === 'Escape') { e.preventDefault(); t.value = t.defaultValue; t.blur(); }
+  });
+  // Number fields (marked data-num): the caret starts at the end, wherever the click landed,
+  // as the usual next key is Backspace. Later clicks in the field place it as usual, and a
+  // selection (all of it when reached with Tab, or dragged) is left alone.
+  document.addEventListener('focusin', e => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement) || !t.hasAttribute('data-num')) return;
+    setTimeout(() => {
+      if (document.activeElement === t && t.selectionStart === t.selectionEnd) t.setSelectionRange(t.value.length, t.value.length);
+    });
   });
   // Auto-grow note textareas to fit their text.
   document.addEventListener('input', e => { if (e.target.matches?.('textarea[data-edit]')) grow(e.target); });

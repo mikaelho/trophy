@@ -52,9 +52,9 @@ const nextPosition = rows => rows.length ? Math.max(...rows.map(r => r.position)
 
 // --- ledgers: Ruin, Burdens and Coin are the sums of their entries -------------------------
 // An entry: ledger/<id> {character, field, amount, description, position, created_at}.
-// Ruin starts at 1: the "+1 Initial" line is not stored, every Ruin ledger has it.
+// Ruin and Burdens start at 1: the "+1 Initial" line is not stored, every such ledger has it.
 export const LEDGERS = { ruin: 'Ruin', burden: 'Burdens', coin: 'Coin' };
-export const LEDGER_START = { ruin: 1, burden: 0, coin: 0 };
+export const LEDGER_START = { ruin: 1, burden: 1, coin: 0 };
 // The lowest each can go: Ruin never below 1, Burdens and Coin never below 0.
 export const LEDGER_MIN = { ruin: 1, burden: 0, coin: 0 };
 export const ledgerEntries = (db, characterId, field) =>

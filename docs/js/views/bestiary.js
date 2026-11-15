@@ -33,7 +33,7 @@ export function bestiary(app) {
     const shown = f => data.queued('monster_save', { id: m.id, field: f }, 'value') ?? m[f];
     const save = f => (value, k) => data.edit('monster_save', { id: m.id, field: f, value }, k);
     const input = (f, cls = '', extra = {}) => field(f, shown(f), save(f), p => html`
-      <input class="input ${cls} ${p.cls}" data-edit autocomplete="off" type=${extra.type || 'text'} min=${extra.min ?? nothing}
+      <input class="input ${cls} ${p.cls}" data-edit autocomplete="off" type="text" inputmode=${extra.type === 'number' ? 'numeric' : nothing} ?data-num=${extra.type === 'number'}
         .value=${p.value} ?disabled=${p.disabled} title=${p.title} @focus=${p.focus} @blur=${p.blur} />`);
     const habits = [...(Array.isArray(m.habits) ? m.habits : []), ...Array(HABIT_COUNT).fill('')].slice(0, HABIT_COUNT);
 

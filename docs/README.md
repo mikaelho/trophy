@@ -50,14 +50,15 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 Ruin, Burdens and Coin are each the sum of a ledger: lines of a whole number (+2, −1) and what
 it was for. Click the Ruin boxes, the Burdens number or the Coin amount on the sheet to open
 its ledger. A new line goes at the top (the amount is +1 unless changed; Enter adds it), the
-lines below can be edited or removed (with Undo). Ruin always starts from the "+1 Initial"
-line. None of them can go below its minimum (Ruin 1, Burdens and Coin 0): a line, an edit, a
+lines below can be edited or removed (with Undo). Ruin and Burdens always start from a
+"+1 Initial" line. None of them can go below its minimum (Ruin 1, Burdens and Coin 0): a line, an edit, a
 removal or an undo that would take it lower is refused with a message. Nothing changes these by itself any more: adding a Power or a piece of equipment does
 not raise Ruin or Burdens, so add a line for it. Each line is its own document, so two
 people adding lines at the same moment never clash.
 
 When the page upgraded to ledgers (data version 3), each character got one "Before the
-ledger" line for whatever its Ruin, Burdens and Coin were then.
+ledger" line for whatever its Ruin, Burdens and Coin were then (above the +1 Initial; data
+version 4 gave Burdens that line too).
 
 ## Undo
 

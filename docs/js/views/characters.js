@@ -77,7 +77,7 @@ export function characterSheet(app, id) {
 
   const lineInput = (field, cls = '', extra = {}) => html`
     <input class="input line-input ${cls} ${locked(field) ? 'locked-field' : ''}" data-edit
-      type=${extra.type || 'text'} min=${extra.min ?? nothing} max=${extra.max ?? nothing}
+      type="text" inputmode=${extra.type === 'number' ? 'numeric' : nothing} ?data-num=${extra.type === 'number'}
       placeholder=${extra.placeholder ?? nothing} autocomplete="off"
       .value=${editValue(shown(field))} ?disabled=${locked(field)} title=${locked(field) ? LOCKED_TITLE : nothing}
       @focus=${() => data.lock(key(field))} @blur=${e => saveField(field, e.target)} />`;
