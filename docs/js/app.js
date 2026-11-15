@@ -69,6 +69,7 @@ const cycleTheme = () => {
 const app = {
   data: null,
   editing: null,       // lock key of the markdown note being edited in this browser
+  ledger: null,        // the open ledger dialog: {id: character id, field: 'ruin'|'burden'|'coin'}
   focusAfter: null,    // selector to focus after the next render
   route() {
     const q = new URLSearchParams(location.search);
@@ -82,14 +83,14 @@ const app = {
   },
   nav(route) {
     history.pushState(null, '', app.href(route));
-    app.editing = null; scrollTo(0, 0); app.render();
+    app.editing = null; app.ledger = null; scrollTo(0, 0); app.render();
   },
   // Click handler for in-app links: navigate without reloading (keep modifier-clicks as is).
   link(e) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     history.pushState(null, '', e.currentTarget.getAttribute('href'));
-    app.editing = null; scrollTo(0, 0); app.render();
+    app.editing = null; app.ledger = null; scrollTo(0, 0); app.render();
   },
   focus(sel) { app.focusAfter = sel; },
   render() {
@@ -103,7 +104,7 @@ const app = {
   },
 };
 app.isGm = () => gm;
-addEventListener('popstate', () => { app.editing = null; app.render(); });
+addEventListener('popstate', () => { app.editing = null; app.ledger = null; app.render(); });
 
 // --- export / import / backups ---------------------------------------------------------
 // Exports are meant for version control: always the same file name, no time stamp inside,

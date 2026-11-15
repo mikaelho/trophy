@@ -14,6 +14,11 @@
 //   note/<id>        {title, description, position, created_at}   (the GM's notes)
 //
 // Version 2: person equipment changed from one item per line to a comma-separated list.
+// Version 3: Ruin, Burdens and Coin became ledgers: the character's ruin, coin and
+//   burden_offset are gone, and each is the sum of its entries
+//   ledger/<id>      {character, field: 'ruin'|'burden'|'coin', amount, description, position, created_at}
+//   (Ruin starts at 1, an implied "+1 Initial" line). The upgrade turns the old values into one
+//   "Before the ledger" entry each; Burdens are no longer worked out from the lists.
 // `character` in child records is the character's id. created_at is an ISO time.
 // A new kind of record (like person) needs no new version: pages that don't know it ignore it.
 //
@@ -26,25 +31,58 @@
 // by the relay as raw rows. Django dumps (dumpdata files, and exports of that relay version)
 // convert to version 1 with fromDjangoDump.
 
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 3;
 
 const STEPS = {
   1: ({ legacy }) => v1FromRecords(recordsFromTables(legacy || {})),
   2: ({ docs }) => mapKind(docs, 'person', p => ({
     ...p, equipment: String(p.equipment ?? '').split(/\n+/).map(s => s.trim()).filter(Boolean).join(', '),
-  })),
+  })),  3: ({ docs }) => ledgersFromTotals(docs),
 };
+
+// Version 2 -> 3: the current Ruin, Burdens and Coin of each character become ledger entries.
+// Burdens were 1 + list items past their free allowance + a manual adjustment.
+const V2_FREE = { power: 3, skill: 4, household: 0, combat: 0 };
+export const BEFORE_LEDGER = 'Before the ledger';
+function ledgersFromTotals(docs) {
+  const out = {}, counts = {};
+  for (const [k, d] of Object.entries(docs)) {
+    const kind = k.slice(0, k.indexOf('/'));
+    if (kind in V2_FREE && d.character != null) {
+      const c = (counts[d.character] ??= { power: 0, skill: 0, household: 0, combat: 0 });
+      c[kind]++;
+    }
+  }
+  for (const [k, d] of Object.entries(docs)) {
+    if (!k.startsWith('character/')) { out[k] = d; continue; }
+    const id = k.slice('character/'.length);
+    const { ruin, coin, burden_offset, ...rest } = d;
+    out[k] = rest;
+    const n = counts[id] || {};
+    const burden = Math.max(0, 1 + Object.entries(V2_FREE).reduce((sum, [kind, free]) => sum + Math.max(0, (n[kind] || 0) - free), 0)
+      + (Number(burden_offset) || 0));
+    const totals = { ruin: (Number(ruin) || 1) - 1, burden, coin: Number(coin) || 0 };
+    let position = 0;
+    for (const [field, amount] of Object.entries(totals)) {
+      if (!amount) continue;
+      out[`ledger/${id}-${field}`] = { character: id, field, amount, description: BEFORE_LEDGER, position: position++,
+        created_at: d.created_at ?? null };
+    }
+  }
+  return out;
+}
 
 // Change every document of one kind; other documents stay as they are.
 const mapKind = (docs, kind, fn) =>
   Object.fromEntries(Object.entries(docs).map(([k, d]) => [k, k.startsWith(kind + '/') ? fn(d) : d]));
 
-// Bring documents from `version` up to DATA_VERSION. `legacy` is only used from version 0.
-export function upgrade(version, { docs = {}, legacy = null } = {}) {
+// Bring documents from `version` up to DATA_VERSION (or `to`, for tests). `legacy` is only used
+// from version 0.
+export function upgrade(version, { docs = {}, legacy = null } = {}, to = DATA_VERSION) {
   if (!Number.isInteger(version) || version < 0) throw new Error('Unknown data version: ' + version);
   if (version > DATA_VERSION) throw new Error(`The data is from a newer version of the page (${version}). Reload the page.`);
   let cur = docs;
-  for (let v = version + 1; v <= DATA_VERSION; v++) cur = STEPS[v]({ docs: cur, legacy });
+  for (let v = version + 1; v <= to; v++) cur = STEPS[v]({ docs: cur, legacy });
   return cur;
 }
 

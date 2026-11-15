@@ -47,6 +47,29 @@ class Spin extends Directive {
 }
 export const spin = directive(Spin);
 
+// <dialog ${modal()}>: opens the dialog as a modal when it first appears (focusing the field
+// marked autofocus). Removing the element from the page closes it.
+class Modal extends Directive {
+  constructor(part) {
+    super(part);
+    if (part.type !== PartType.ELEMENT) throw new Error('modal() goes on a <dialog>');
+  }
+  render() { return noChange; }
+  update(part) {
+    const el = part.element;
+    if (!el._modal) {
+      el._modal = true;
+      requestAnimationFrame(() => {
+        if (!el.isConnected || el.open) return;
+        el.showModal();
+        el.querySelector('[autofocus]')?.focus();
+      });
+    }
+    return noChange;
+  }
+}
+export const modal = directive(Modal);
+
 // A fair random number from 0 up to (not including) 1, from the browser's secure random source.
 export const random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 // One d6 roll, 1 to 6.
@@ -94,10 +117,13 @@ export function markdownInline(text) {
 
 // A message shown briefly at the bottom of the page.
 // action: {label, fn} adds a button (e.g. Undo) and keeps the message up a little longer.
-let toastTimer;
+let toastTimer, toastEl;
 export function toast(msg, { action } = {}) {
-  const el = document.getElementById('toast');
+  const el = toastEl ??= document.getElementById('toast');
   if (!el) return;
+  // An open modal dialog makes the rest of the page inert: show the message inside it then.
+  const host = document.querySelector('dialog[open]') || document.body;
+  if (el.parentElement !== host) host.append(el);
   el.replaceChildren(document.createTextNode(msg));
   if (action) {
     const b = Object.assign(document.createElement('button'), { className: 'toast-action', textContent: action.label });

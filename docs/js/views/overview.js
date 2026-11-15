@@ -4,7 +4,7 @@
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { bySlot } from '../model/rules.js';
 import { markdown, markdownInline } from '../ui.js';
-import { burdenOf, sortedCharacters, HOARD_MAX } from './characters.js';
+import { burdenOf, ruinOf, coinOf, sortedCharacters, HOARD_MAX } from './characters.js';
 
 const pair = (...parts) => { const v = parts.map(p => String(p ?? '').trim()).filter(Boolean); return v.length ? v.join(' · ') : '—'; };
 const scalar = v => String(v ?? '').trim() || '—';
@@ -32,8 +32,8 @@ export function overview(app) {
     ['Player', c => scalar(c.player_name)],
     ['Occupation · Background', c => pair(c.occupation, c.background)],
     ['Look', c => scalar(c.look)],
-    ['Ruin · Burden', c => `${c.ruin} · ${burdenOf(data, c)}`],
-    ['Coin · Hunt Tokens', c => `${c.coin} · ${c.hunt_tokens}`],
+    ['Ruin · Burden', c => `${ruinOf(data, c)} · ${burdenOf(data, c)}`],
+    ['Coin · Hunt Tokens', c => `${coinOf(data, c)} · ${c.hunt_tokens}`],
     ['Skills', c => list(names(kids('skill', c)))],
     ['Powers', c => list(names(kids('power', c)))],
     ['Combat', c => list(names(kids('combat', c)))],

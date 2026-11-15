@@ -27,6 +27,7 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `js/transport.js` – the relay client, copied from vod-js
 - `js/ui.js` – edit-field behaviour, markdown, small helpers
 - `js/views/characters.js` – character list and sheet
+- `js/views/ledger.js` – the ledger dialogs of Ruin, Burdens and Coin (see below)
 - `js/views/overview.js` – read-only table of all characters (column groups fold per viewer)
 - `js/views/roller.js` – shared dice mat, per-character sections, roll reference
 - `js/views/bestiary.js` – shared monster boxes, with field locks like the sheet
@@ -43,6 +44,20 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `lists/` – copy of `trophy/lists/` (the page fetches these; GitHub Pages only serves this folder)
 - `vendor/` – third-party code, nothing loads from a CDN:
   lit-html 3.3.3 (built from the lit repo sources), marked 18.0.10, DOMPurify 3.4.14
+
+## Ledgers
+
+Ruin, Burdens and Coin are each the sum of a ledger: lines of a whole number (+2, −1) and what
+it was for. Click the Ruin boxes, the Burdens number or the Coin amount on the sheet to open
+its ledger. A new line goes at the top (the amount is +1 unless changed; Enter adds it), the
+lines below can be edited or removed (with Undo). Ruin always starts from the "+1 Initial"
+line. None of them can go below its minimum (Ruin 1, Burdens and Coin 0): a line, an edit, a
+removal or an undo that would take it lower is refused with a message. Nothing changes these by itself any more: adding a Power or a piece of equipment does
+not raise Ruin or Burdens, so add a line for it. Each line is its own document, so two
+people adding lines at the same moment never clash.
+
+When the page upgraded to ledgers (data version 3), each character got one "Before the
+ledger" line for whatever its Ruin, Burdens and Coin were then.
 
 ## Undo
 

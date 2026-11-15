@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { DocStore } from '../worker/src/store.mjs';
 import { nodeSql } from '../worker/src/node-sql.mjs';
 import { DATA_VERSION, fromDjangoDump, upgrade } from '../docs/js/model/migrations.js';
-import { compute } from '../docs/js/model/rules.js';
+import { compute, ruinOf } from '../docs/js/model/rules.js';
 import { DocView } from '../docs/js/model/view.js';
 import { record, revert, describe } from '../docs/js/model/undo.js';
 
@@ -64,30 +64,47 @@ test('undoing a character deletion brings back everything with the same ids', ()
   assert.equal(v.childrenOf('skill', lora.id).length, 0);
 });
 
-test('undoing a new power removes it and lowers Ruin again', () => {
+test('undoing a ledger line removes it, and undoing its removal brings it back', () => {
   const { page, run, back } = setup();
   const v = page();
   const { result: { id } } = run(v, 'new_character');
-  const { step } = run(v, 'add_child', { id, kind: 'power', name: 'Ward' });
-  assert.equal(step.label, 'add power "Ward"');
-  assert.equal(v.get('character', id).ruin, 2);
+  const { step, result: { id: entry } } = run(v, 'ledger_add', { id, field: 'ruin', amount: '+1', description: 'Power: Ward' });
+  assert.equal(step.label, 'a character: Ruin +1 "Power: Ward"');
+  assert.equal(ruinOf(v, v.get('character', id)), 2);
   back(v, step);
-  assert.equal(v.childrenOf('power', id).length, 0);
-  assert.equal(v.get('character', id).ruin, 1);
+  assert.equal(ruinOf(v, v.get('character', id)), 1);
+  const { result: { id: entry2 } } = run(v, 'ledger_add', { id, field: 'ruin', amount: '+1', description: 'Power: Ward' });
+  const rm = run(v, 'ledger_remove', { entry: entry2 });
+  assert.match(rm.step.label, /^remove a character: Ruin line "Power: Ward"/);
+  back(v, rm.step);
+  assert.equal(v.get('ledger', entry2).description, 'Power: Ward');
+  assert.equal(v.get('ledger', entry), null);
+});
+
+test('undo does not take a ledger below its minimum', async () => {
+  const { page, run } = setup();
+  const v = page();
+  const { result: { id } } = run(v, 'new_character');
+  const { step } = run(v, 'ledger_add', { id, field: 'coin', amount: '+5', description: 'Hide' });
+  run(v, 'ledger_add', { id, field: 'coin', amount: '-4', description: 'Rope' });
+  const { ledgerViolation } = await import('../docs/js/model/undo.js');
+  assert.match(ledgerViolation(v, revert(v, step).writes), /Coin cannot go below 0 \(it would be -4\)/);
+  const { step: s2 } = run(v, 'ledger_add', { id, field: 'ruin', amount: '+2', description: 'Wound' });
+  assert.equal(ledgerViolation(v, revert(v, s2).writes), null);
 });
 
 test('what someone else changed since is left alone and reported', () => {
   const { page, sync, run, back } = setup();
   const a = page();
   const { result: { id } } = run(a, 'new_character');
-  const { step } = run(a, 'add_child', { id, kind: 'power', name: 'Ward' }); // ruin 1 -> 2
+  const { result: { id: entry } } = run(a, 'ledger_add', { id, field: 'coin', amount: '+5', description: 'Hide' });
+  const { step } = run(a, 'ledger_save', { entry, field: 'amount', value: '+6' });
   const b = sync(page());
-  run(b, 'set_ruin', { id, n: 4 });                                           // b: ruin -> 4
+  run(b, 'ledger_save', { entry, field: 'amount', value: '+8' });           // b changes it again
   sync(a);
   const undo = back(a, step);
-  assert.equal(a.childrenOf('power', id).length, 0, 'the power is removed');
-  assert.equal(a.get('character', id).ruin, 4, "b's Ruin is kept");
-  assert.deepEqual(undo.skipped, [`character/${id}`]);
+  assert.equal(a.get('ledger', entry).amount, 8, "b's amount is kept");
+  assert.deepEqual(undo.skipped, [`ledger/${entry}`]);
 });
 
 test("someone else's change to another field of the same record does not block undo", () => {

@@ -7,8 +7,8 @@ import { tmpdir } from 'node:os';
 import { DocStore } from '../worker/src/store.mjs';
 import { RoomCore } from '../worker/src/room-core.mjs';
 import { nodeSql } from '../worker/src/node-sql.mjs';
-import { DATA_VERSION, upgrade, fromDjangoDump } from '../docs/js/model/migrations.js';
-import { compute, burdenBase, burdenOf, RuleError } from '../docs/js/model/rules.js';
+import { DATA_VERSION, upgrade, fromDjangoDump, BEFORE_LEDGER } from '../docs/js/model/migrations.js';
+import { compute, burdenOf, ruinOf, coinOf, ledgerEntries, parseAmount, formatAmount, RuleError } from '../docs/js/model/rules.js';
 import { DocView } from '../docs/js/model/view.js';
 
 const dump = JSON.parse(readFileSync(new URL('../trophy-db.json', import.meta.url), 'utf8'));
@@ -52,7 +52,7 @@ test('the Django dump converts to version 1 documents', () => {
 
 test('a room of the previous relay version upgrades to the same documents, with its later changes', () => {
   const fromDump = fromDjangoDump(dump);
-  const fromRoom = upgrade(0, { legacy: legacyTables });
+  const fromRoom = upgrade(0, { legacy: legacyTables }, 1);
   // the fixture room = the dump + a power and a weapon for Lora, a rolled die, a habit
   assert.equal(Object.keys(fromRoom).length, Object.keys(fromDump).length + 2);
   const lora = Object.keys(fromDump).find(k => k.startsWith('character/') && fromDump[k].name === 'Lora');
@@ -109,43 +109,84 @@ test('new character gets six backpack slots', () => {
   const { id } = run(v, 'new_character');
   assert.equal(v.childrenOf('backpack', id).length, 6);
   const c = v.get('character', id);
-  assert.equal(c.ruin, 1); assert.equal(c.hireling, false); assert.match(c.created_at, /Z$/);
+  assert.equal(ruinOf(v, c), 1, 'Ruin starts at 1'); assert.equal(burdenOf(v, c), 0); assert.equal(coinOf(v, c), 0);
+  assert.equal(c.hireling, false); assert.match(c.created_at, /Z$/);
+  assert.equal(c.ruin, undefined); assert.equal(c.coin, undefined);
 });
 
-test('powers raise Ruin and Burden past three; removing one lowers Ruin', () => {
+test('ledgers: lines add up, are edited and removed; lists no longer change Ruin or Burdens', () => {
   const { page, run } = setup();
   const v = page();
   const { id } = run(v, 'new_character');
   for (const n of ['a', 'b', 'c', 'd']) run(v, 'add_child', { id, kind: 'power', name: n });
-  assert.equal(v.get('character', id).ruin, 5);
-  assert.equal(burdenBase(v, id), 2);
-  const p = v.childrenOf('power', id);
-  assert.deepEqual(p.map(r => r.position), [0, 1, 2, 3]);
-  run(v, 'remove_child', { kind: 'power', item: p[0].id });
-  assert.equal(v.get('character', id).ruin, 4);
-});
-
-test('burden adjustment keeps the offset relative to the derived value', () => {
-  const { page, run } = setup();
-  const v = page();
-  const { id } = run(v, 'new_character');
-  run(v, 'adjust_burden', { id, delta: -1 });
-  run(v, 'adjust_burden', { id, delta: -1 }); // floored at 0
-  assert.equal(v.get('character', id).burden_offset, -1);
   run(v, 'add_child', { id, kind: 'combat', name: 'Spear', combat_kind: 'weapon' });
-  assert.equal(burdenOf(v, v.get('character', id)), 1);
+  const c = () => v.get('character', id);
+  assert.equal(ruinOf(v, c()), 1); assert.equal(burdenOf(v, c()), 0);
+  const r1 = run(v, 'ledger_add', { id, field: 'ruin', amount: '+1', description: ' Power: Ward ' }).id;
+  run(v, 'ledger_add', { id, field: 'ruin', amount: '2', description: 'Bad night' });
+  run(v, 'ledger_add', { id, field: 'coin', amount: '+12', description: 'Sold the hide' });
+  const spent = run(v, 'ledger_add', { id, field: 'coin', amount: '−5', description: 'Rope' }).id;
+  run(v, 'ledger_add', { id, field: 'burden', amount: '+1', description: '' });
+  assert.equal(ruinOf(v, c()), 4); assert.equal(coinOf(v, c()), 7); assert.equal(burdenOf(v, c()), 1);
+  assert.equal(v.get('ledger', r1).description, 'Power: Ward');
+  assert.deepEqual(ledgerEntries(v, id, 'coin').map(e => e.amount), [12, -5], 'in the order added');
+  run(v, 'ledger_save', { entry: spent, field: 'amount', value: '-3' });
+  run(v, 'ledger_save', { entry: spent, field: 'description', value: 'Rope, cheaper' });
+  assert.equal(coinOf(v, c()), 9); assert.equal(v.get('ledger', spent).description, 'Rope, cheaper');
+  run(v, 'ledger_remove', { entry: r1 });
+  assert.equal(ruinOf(v, c()), 3);
+  assert.deepEqual(compute(v, 'ledger_add', { id, field: 'ruin', amount: '0', description: '' }).writes, [], 'an empty line adds nothing');
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'ruin', amount: 'x' }), /whole number/);
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'hoard', amount: '1' }), /Unknown ledger/);
+  assert.throws(() => compute(v, 'ledger_save', { entry: spent, field: 'amount', value: '1.5' }), /whole number/);
+  assert.throws(() => compute(v, 'save_field', { id, field: 'coin', value: 5 }), /Unknown field/);
+  // never below the minimum: Ruin 1, Burdens and Coin 0 (now Ruin 3, Coin 9, Burdens 1)
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'coin', amount: '-10', description: 'Too much' }), /Coin cannot go below 0 \(it would be -1\)/);
+  run(v, 'ledger_add', { id, field: 'coin', amount: '-9', description: 'All of it' });
+  assert.equal(coinOf(v, c()), 0);
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'ruin', amount: '-3' }), /Ruin cannot go below 1/);
+  assert.throws(() => compute(v, 'ledger_add', { id, field: 'burden', amount: '-2' }), /Burdens cannot go below 0/);
+  const twelve = ledgerEntries(v, id, 'coin')[0];
+  assert.throws(() => compute(v, 'ledger_remove', { entry: twelve.id }), /Coin cannot go below 0/, 'removing income that was spent');
+  assert.throws(() => compute(v, 'ledger_save', { entry: twelve.id, field: 'amount', value: '+1' }), /Coin cannot go below 0/);
+  run(v, 'ledger_save', { entry: twelve.id, field: 'amount', value: '+20' });   // raising is fine
+  assert.equal(coinOf(v, c()), 8);
+  assert.deepEqual(['+1', '-2', '−3', ' 4 ', '+ 2', '1.5', '', 'a'].map(parseAmount), [1, -2, -3, 4, 2, null, null, null]);
+  assert.deepEqual([3, -2, 0].map(formatAmount), ['+3', '−2', '0']);
 });
 
-test('field rules: trimming, clamping, ruin toggle, ammo toggle, uses', () => {
+test('upgrading to ledgers: the old Ruin, Burdens and Coin become one line each', () => {
+  const v2 = upgrade(1, { docs: fromDjangoDump(dump) }, 2);
+  const v3 = upgrade(2, { docs: v2 });
+  const view = new DocView();
+  view.load(Object.entries(v3).map(([k, d]) => [k, 1, d]));
+  const chars = Object.keys(v2).filter(k => k.startsWith('character/'));
+  assert.ok(chars.length > 3);
+  const n = (kind, id) => Object.values(v2).filter(d => d.character === id && Object.keys(v2).find(k => v2[k] === d).startsWith(kind + '/')).length;
+  for (const k of chars) {
+    const id = k.split('/')[1], old = v2[k], c = view.get('character', id);
+    assert.equal(c.ruin, undefined); assert.equal(c.coin, undefined); assert.equal(c.burden_offset, undefined);
+    assert.equal(ruinOf(view, c), old.ruin, k);
+    assert.equal(coinOf(view, c), old.coin, k);
+    const burden = Math.max(0, 1 + Math.max(0, n('power', id) - 3) + Math.max(0, n('skill', id) - 4) + n('household', id) + n('combat', id) + old.burden_offset);
+    assert.equal(burdenOf(view, c), burden, k);
+    for (const e of view.childrenOf('ledger', id)) { assert.equal(e.description, BEFORE_LEDGER); assert.notEqual(e.amount, 0); }
+    assert.equal(ledgerEntries(view, id, 'ruin').length, old.ruin > 1 ? 1 : 0, 'Ruin 1 needs no line');
+  }
+  assert.deepEqual(upgrade(2, { docs: v2 }), v3, 'the same every time (ids are not random)');
+  const others = Object.keys(v2).filter(k => !k.startsWith('character/'));
+  for (const k of others) assert.deepEqual(v3[k], v2[k], k);
+});
+
+test('field rules: trimming, clamping, ammo toggle, uses', () => {
   const { page, run } = setup();
   const v = page();
   const { id } = run(v, 'new_character');
   run(v, 'save_field', { id, field: 'name', value: '  Evian  ' });
   run(v, 'save_field', { id, field: 'hoard', value: '99' });
-  run(v, 'save_field', { id, field: 'coin', value: '-5' });
-  run(v, 'set_ruin', { id, n: 3 }); run(v, 'set_ruin', { id, n: 3 });
+  run(v, 'save_field', { id, field: 'hunt_tokens', value: '-5' });
   const c = v.get('character', id);
-  assert.equal(c.name, 'Evian'); assert.equal(c.hoard, 50); assert.equal(c.coin, 0); assert.equal(c.ruin, 2);
+  assert.equal(c.name, 'Evian'); assert.equal(c.hoard, 50); assert.equal(c.hunt_tokens, 0);
   const w = run(v, 'add_child', { id, kind: 'combat', name: 'Bow', combat_kind: 'weapon' }).id;
   run(v, 'set_ammo', { item: w, n: 2 }); run(v, 'set_ammo', { item: w, n: 2 });
   assert.equal(v.get('combat', w).ammo, 1);
@@ -161,6 +202,7 @@ test('deleting a character removes its records', () => {
   const v = page();
   const { id } = run(v, 'new_character');
   run(v, 'add_child', { id, kind: 'skill', name: 'Climb' });
+  run(v, 'ledger_add', { id, field: 'coin', amount: '+3', description: 'Found' });
   run(v, 'delete_character', { id });
   assert.equal(store.allDocs().length, 0);
 });
@@ -240,16 +282,13 @@ test('two pages changing the same thing: the later one is refused, then recomput
   store.write({ version: DATA_VERSION, writes: t2.writes });
   sync(a);
   assert.equal(a.get('character', id).name, 'A'); assert.equal(a.get('character', id).look, 'tall');
-  // two powers added at once: both kept, Ruin counts both after the retry
+  // two powers added at once: separate documents, so both are simply kept
   const p1 = compute(a, 'add_child', { id, kind: 'power', name: 'P1' });
   const p2 = compute(b, 'add_child', { id, kind: 'power', name: 'P2' });
   store.write({ version: DATA_VERSION, writes: p1.writes });
-  assert.throws(() => store.write({ version: DATA_VERSION, writes: p2.writes }), e => e.code === 'conflict');
-  sync(b);
-  store.write({ version: DATA_VERSION, writes: compute(b, 'add_child', { id, kind: 'power', name: 'P2' }).writes });
+  store.write({ version: DATA_VERSION, writes: p2.writes });
   sync(a);
-  assert.deepEqual(a.childrenOf('power', id).map(p => p.name), ['P1', 'P2']);
-  assert.equal(a.get('character', id).ruin, 3);
+  assert.deepEqual(a.childrenOf('power', id).map(p => p.name).sort(), ['P1', 'P2']);
 });
 
 test('people: generated look and equipment kept, fields edited, removed', () => {
@@ -293,7 +332,7 @@ test('version 2: equipment of existing people becomes a comma-separated list, no
       description: 'Line one\nLine two', position: 0, created_at: '2026-11-04T10:00:00.000Z' },
     'person/b': { name: 'Nobody', title: '', location: '', look: '', equipment: '', description: '', position: 1, created_at: '2026-11-04T10:00:00.000Z' },
   };
-  const v2 = upgrade(1, { docs: v1 });
+  const v2 = upgrade(1, { docs: v1 }, 2);
   assert.equal(v2['person/a'].equipment, 'Rusty lantern, Ferry pole, Rope');
   assert.equal(v2['person/a'].description, 'Line one\nLine two', 'only equipment changes');
   assert.equal(v2['person/b'].equipment, '');

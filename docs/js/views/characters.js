@@ -3,10 +3,11 @@
 import { html, nothing } from '../../vendor/lit-html/lit-html.js';
 import { repeat } from '../../vendor/lit-html/directives/repeat.js';
 import { live } from '../../vendor/lit-html/directives/live.js';
-import { byPosition, bySlot, compareIds, burdenOf, FREE_POWERS, FREE_SKILLS, RUIN_MAX, HOARD_MAX, AMMO_MAX } from '../model/rules.js';
+import { byPosition, bySlot, compareIds, burdenOf, ruinOf, coinOf, FREE_POWERS, FREE_SKILLS, RUIN_MAX, HOARD_MAX, AMMO_MAX } from '../model/rules.js';
+import { ledgerDialog, openLedger } from './ledger.js';
 import { editValue, markdown, attempt, toast, dieIcon } from '../ui.js';
 
-export { burdenOf, HOARD_MAX };
+export { burdenOf, ruinOf, coinOf, HOARD_MAX };
 const LOCKED_TITLE = 'Someone is editing this';
 
 export const characterLabel = c => {
@@ -148,7 +149,8 @@ export function characterSheet(app, id) {
     if (await act(data.op('delete_character', { id: c.id })) !== undefined) app.nav({});
   };
 
-  const burden = burdenOf(data, c);
+  const burden = burdenOf(data, c), ruin = ruinOf(data, c), coin = coinOf(data, c);
+  const ledger = field => () => openLedger(app, c.id, field);
   const combat = data.childrenOf('combat', c.id);
   const backpack = data.childrenOf('backpack', c.id, bySlot);
   const found = data.childrenOf('found', c.id, byPosition);
@@ -187,16 +189,16 @@ export function characterSheet(app, id) {
       <div class="sheet-card">
         <div class="card-head"><div class="field-label">Ruin</div><div class="field-label">Burdens</div></div>
         <div class="ruin-row">
-          <div class="ruin-track">${Array.from({ length: RUIN_MAX }, (_, i) => i + 1).map(n => html`
-            <div class="ruin-box ${n <= c.ruin ? 'on' : ''}" @click=${() => op('set_ruin', { n })}>${n}</div>`)}</div>
-          <div class="burden">
-            <button class="btn btn-ghost btn-xs" title="Lower Burdens" @click=${() => op('adjust_burden', { delta: -1 })}>&minus;</button>
-            <div class="burden-value">${burden}</div>
-            <button class="btn btn-ghost btn-xs" title="Raise Burdens" @click=${() => op('adjust_burden', { delta: 1 })}>+</button>
-          </div>
+          <button class="ruin-track ledger-open" title=${`Ruin ${ruin}: open the ledger`} @click=${ledger('ruin')}>
+            ${Array.from({ length: RUIN_MAX }, (_, i) => i + 1).map(n => html`
+              <span class="ruin-box ${n <= ruin ? 'on' : ''}">${n}</span>`)}
+            ${ruin > RUIN_MAX || ruin < 1 ? html`<span class="ruin-extra">${ruin}</span>` : nothing}
+          </button>
+          <button class="burden-value ledger-open" title="Burdens: open the ledger" @click=${ledger('burden')}>${burden}</button>
         </div>
         <div class="number-grid">
-          <span class="field-label">Coin</span>${lineInput('coin', 'number', { type: 'number', min: 0 })}
+          <span class="field-label">Coin</span>
+          <button class="ledger-number ledger-open" title="Coin: open the ledger" @click=${ledger('coin')}>${coin}</button>
           <span class="field-label">Hunt Tokens</span>${lineInput('hunt_tokens', 'number', { type: 'number', min: 0 })}
         </div>
       </div>
@@ -257,5 +259,6 @@ export function characterSheet(app, id) {
 
     <div class="sheet-card wide">
       <div class="field-label">Notes</div>${noteField('notes', 3)}
-    </div>`;
+    </div>
+    ${ledgerDialog(app, c)}`;
 }

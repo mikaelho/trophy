@@ -12,6 +12,8 @@
 // document at the same moment, the relay refuses it and the page computes it again.
 // Redo is the same thing the other way: reverting an undo.
 
+import { LEDGERS, LEDGER_START, LEDGER_MIN, ledgerTotal } from './rules.js';
+
 const equal = (a, b) => {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false;
@@ -71,11 +73,36 @@ export function revert(view, step) {
   return { writes, skipped, undone };
 }
 
+// Undo bypasses the rules, so check it does not take Ruin, Burdens or Coin below their minimum:
+// returns the reason, or null.
+export function ledgerViolation(view, writes) {
+  const after = new Map();
+  for (const w of writes) {
+    if (!w.key.startsWith('ledger/')) continue;
+    const cur = after.has(w.key) ? after.get(w.key) : view.docs.get(w.key)?.data ?? null;
+    after.set(w.key, w.op === 'delete' ? null : w.op === 'put' ? w.data : cur && { ...cur, ...w.fields });
+  }
+  const touched = new Set();
+  for (const [k, d] of after) { const old = view.docs.get(k)?.data; for (const x of [d, old]) if (x) touched.add(`${x.character}\u0000${x.field}`); }
+  for (const t of touched) {
+    const [character, field] = t.split('\u0000');
+    const before = ledgerTotal(view, character, field);
+    let total = LEDGER_START[field] ?? 0;
+    for (const [k, d] of view.docs) if (k.startsWith('ledger/') && !after.has(k) && d.data.character === character && d.data.field === field) total += Number(d.data.amount) || 0;
+    for (const d of after.values()) if (d && d.character === character && d.field === field) total += Number(d.amount) || 0;
+    const min = LEDGER_MIN[field] ?? 0;
+    if (total < min && total < before) return `${LEDGERS[field]} cannot go below ${min} (it would be ${total}).`;
+  }
+  return null;
+}
+
 // --- what to call a step, for the Undo button and messages ------------------------------
 
 const KIND = { power: 'power', skill: 'skill', household: 'household detail', combat: 'combat item',
   found: 'found item', backpack: 'backpack item' };
 const field = f => String(f).replace(/_/g, ' ');
+const LEDGER = { ruin: 'Ruin', burden: 'Burdens', coin: 'Coin' };
+const signed = v => { const s = String(v ?? '').trim(); return /^[+−-]/.test(s) ? s : '+' + s; };
 const quote = s => (String(s || '').trim() ? `"${String(s).trim().slice(0, 30)}"` : '');
 
 export function describe(view, op, args = {}) {
@@ -89,8 +116,12 @@ export function describe(view, op, args = {}) {
     case 'toggle_flag': return `${char(args.id)}: ${field(args.field)}`;
     case 'save_field': return `${char(args.id)}: ${field(args.field)}`;
     case 'append_look': return `${char(args.id)}: look`;
-    case 'adjust_burden': return `${char(args.id)}: burdens`;
-    case 'set_ruin': return `${char(args.id)}: ruin`;
+    case 'ledger_add': return `${char(args.id)}: ${LEDGER[args.field] || 'ledger'} ${signed(args.amount)} ${quote(args.description)}`.trim();
+    case 'ledger_save': case 'ledger_remove': {
+      const e = view.get('ledger', args.entry);
+      const what = e ? `${char(e.character)}: ${LEDGER[e.field] || 'ledger'} line ${quote(e.description)}`.trim() : 'a ledger line';
+      return op === 'ledger_remove' ? `remove ${what}` : what;
+    }
     case 'add_child': return `add ${KIND[args.kind] || 'item'} ${quote(args.name)}`.trim();
     case 'rename_child': return `rename ${KIND[args.kind] || 'item'} ${quote(item(args.kind, args.item))}`.trim();
     case 'remove_child': return `remove ${KIND[args.kind] || 'item'} ${quote(item(args.kind, args.item))}`.trim();

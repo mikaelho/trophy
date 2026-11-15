@@ -6,14 +6,14 @@
 // field they change, so edits to different fields never collide.
 // Rules ported from trophy/alive_hooks.py; the data layout is described in migrations.js.
 
-export const FREE_POWERS = 3, FREE_SKILLS = 4, BACKPACK_SLOTS = 6, RUIN_MAX = 6, HOARD_MAX = 50, AMMO_MAX = 3, BASE_BURDEN = 1;
+export const FREE_POWERS = 3, FREE_SKILLS = 4, BACKPACK_SLOTS = 6, RUIN_MAX = 6, HOARD_MAX = 50, AMMO_MAX = 3;
 const HABIT_COUNT = 6;
 const TEXT_FIELDS = new Set(['name', 'gender', 'player_name', 'occupation', 'background', 'look', 'drive', 'conditions', 'notes']);
-const INT_FIELDS = new Set(['hoard', 'coin', 'hunt_tokens']);
+const INT_FIELDS = new Set(['hoard', 'hunt_tokens']);
 const FLAG_FIELDS = new Set(['hireling', 'archived']);
 const MAX_LEN = { name: 120, gender: 60, player_name: 120, occupation: 200, background: 200, look: 200 };
 const LIST_KINDS = new Set(['power', 'skill', 'household', 'combat', 'found', 'backpack']);
-const CHILD_KINDS = [...LIST_KINDS];
+const CHILD_KINDS = [...LIST_KINDS, 'ledger'];
 const MONSTER_TEXT = { name: 200, description: 400, defences: null, weakness: 300 };
 const DIE_COLORS = new Set(['light', 'dark']);
 const PERSON_TEXT = { name: 120, title: 200, location: 200, look: 300, equipment: 1000, description: 20000 };
@@ -50,12 +50,35 @@ function child(db, kind, id) {
 }
 const nextPosition = rows => rows.length ? Math.max(...rows.map(r => r.position)) + 1 : 0;
 
-// Burden: base 1 + every list item past its free allowance + the manual adjustment, never below 0.
-export function burdenBase(db, characterId) {
-  const n = kind => db.childrenOf(kind, characterId).length;
-  return BASE_BURDEN + Math.max(0, n('power') - FREE_POWERS) + Math.max(0, n('skill') - FREE_SKILLS) + n('household') + n('combat');
+// --- ledgers: Ruin, Burdens and Coin are the sums of their entries -------------------------
+// An entry: ledger/<id> {character, field, amount, description, position, created_at}.
+// Ruin starts at 1: the "+1 Initial" line is not stored, every Ruin ledger has it.
+export const LEDGERS = { ruin: 'Ruin', burden: 'Burdens', coin: 'Coin' };
+export const LEDGER_START = { ruin: 1, burden: 0, coin: 0 };
+// The lowest each can go: Ruin never below 1, Burdens and Coin never below 0.
+export const LEDGER_MIN = { ruin: 1, burden: 0, coin: 0 };
+export const ledgerEntries = (db, characterId, field) =>
+  db.childrenOf('ledger', characterId).filter(e => e.field === field);
+export const ledgerTotal = (db, characterId, field) =>
+  ledgerEntries(db, characterId, field).reduce((sum, e) => sum + (Number(e.amount) || 0), LEDGER_START[field] ?? 0);
+export const burdenOf = (db, c) => ledgerTotal(db, c.id, 'burden');
+export const ruinOf = (db, c) => ledgerTotal(db, c.id, 'ruin');
+export const coinOf = (db, c) => ledgerTotal(db, c.id, 'coin');
+// "+2", "-1", "−1" (a typographic minus) or "3" -> a whole number; anything else -> null.
+export function parseAmount(v) {
+  const s = String(v ?? '').trim().replace(/[−–]/g, '-').replace(/\s+/g, '');
+  return /^[+-]?\d+$/.test(s) ? parseInt(s, 10) : null;
 }
-export const burdenOf = (db, c) => Math.max(0, burdenBase(db, c.id) + (c.burden_offset || 0));
+// Why changing a ledger's total by `change` is not allowed, or null when it is.
+export function ledgerProblem(db, characterId, field, change) {
+  const total = ledgerTotal(db, characterId, field) + change, min = LEDGER_MIN[field] ?? 0;
+  return change < 0 && total < min ? `${LEDGERS[field]} cannot go below ${min} (it would be ${total}).` : null;
+}
+const checkLedger = (db, characterId, field, change) => {
+  const problem = ledgerProblem(db, characterId, field, change);
+  if (problem) throw new RuleError(problem);
+};
+export const formatAmount = n => (n > 0 ? '+' + n : n < 0 ? '−' + -n : '0');
 
 // --- the roller: one document holding the mat and the sections --------------------------
 function roller(db) {
@@ -81,6 +104,13 @@ function rolled(dice, values) {
   return dice.map(d => (d.id in values ? { ...d, value: values[d.id], roll: (Number(d.roll) || 0) + 1 } : d));
 }
 
+const LEDGER_TEXT = 300;
+function ledgerEntry(db, id) {
+  const e = db.get('ledger', id);
+  if (!e) throw new RuleError('This ledger line no longer exists.');
+  return e;
+}
+
 function monster(db, id) {
   const m = db.get('monster', id);
   if (!m) throw new RuleError('This creature no longer exists.');
@@ -93,7 +123,7 @@ export const RULES = {
     const id = newId();
     const writes = [put('character', id, {
       name: '', gender: '', player_name: '', occupation: '', background: '', look: '', drive: '', conditions: '', notes: '',
-      ruin: 1, hoard: 0, coin: 0, hunt_tokens: 0, burden_offset: 0, hireling: false, archived: false,
+      hoard: 0, hunt_tokens: 0, hireling: false, archived: false,
       created_at: new Date().toISOString(),
     }, 0)];
     for (let i = 0; i < BACKPACK_SLOTS; i++) writes.push(put('backpack', newId(), { character: id, name: '', uses: 0, slot: i, position: i }, 0));
@@ -131,21 +161,36 @@ export const RULES = {
     return done([patch('character', c, { look: cut(existing ? existing + ', ' + w : w, MAX_LEN.look) })]);
   },
 
-  // +/- moves the displayed total (floored at 0); the offset absorbs the gap so automatic
-  // list contributions still shift the total afterwards.
-  adjust_burden(db, { id, delta }) {
-    const c = character(db, id), d = toInt(delta);
-    if (!d) return done([]);
-    const base = burdenBase(db, c.id);
-    const total = Math.max(0, base + c.burden_offset);
-    return done([patch('character', c, { burden_offset: Math.max(0, total + d) - base })]);
+  // --- ledgers ---------------------------------------------------------------------------
+  ledger_add(db, { id, field, amount, description }) {
+    const c = character(db, id);
+    if (!(field in LEDGERS)) throw new RuleError('Unknown ledger: ' + field);
+    const n = parseAmount(amount);
+    if (n === null) throw new RuleError('The amount must be a whole number, like +1 or -2.');
+    const text = cut(String(description ?? '').trim(), LEDGER_TEXT);
+    if (!n && !text) return done([]);
+    checkLedger(db, c.id, field, n);
+    const entryId = newId();
+    return done([put('ledger', entryId, {
+      character: c.id, field, amount: n, description: text,
+      position: nextPosition(db.childrenOf('ledger', c.id)), created_at: new Date().toISOString(),
+    }, 0)], { id: entryId });
   },
-
-  // Clicking the current level clears down to it; box 1 always stays ticked.
-  set_ruin(db, { id, n }) {
-    const c = character(db, id), k = toInt(n);
-    if (!k) return done([]);
-    return done([patch('character', c, { ruin: clamp(k === c.ruin ? k - 1 : k, 1, RUIN_MAX) })]);
+  ledger_save(db, { entry, field, value }) {
+    const e = ledgerEntry(db, entry);
+    if (field === 'description') return done([patch('ledger', e, { description: cut(String(value ?? '').trim(), LEDGER_TEXT) }, false)]);
+    if (field === 'amount') {
+      const n = parseAmount(value);
+      if (n === null) throw new RuleError('The amount must be a whole number, like +1 or -2.');
+      checkLedger(db, e.character, e.field, n - (Number(e.amount) || 0));
+      return done([patch('ledger', e, { amount: n })]);
+    }
+    throw new RuleError('Unknown field: ' + field);
+  },
+  ledger_remove(db, { entry }) {
+    const e = ledgerEntry(db, entry);
+    checkLedger(db, e.character, e.field, -(Number(e.amount) || 0));
+    return done([del('ledger', e.id)]);
   },
 
   add_child(db, { id, kind, name, combat_kind }) {
@@ -155,9 +200,7 @@ export const RULES = {
     const doc = { character: c.id, name: nm, position: nextPosition(db.childrenOf(kind, c.id)) };
     if (kind === 'combat') Object.assign(doc, { kind: combat_kind === 'weapon' ? 'weapon' : 'armor', marked: false, ammo: 0 });
     const newKey = newId();
-    const writes = [put(kind, newKey, doc, 0)];
-    if (kind === 'power') writes.push(patch('character', c, { ruin: clamp(c.ruin + 1, 1, RUIN_MAX) })); // each power raises Ruin
-    return done(writes, { id: newKey });
+    return done([put(kind, newKey, doc, 0)], { id: newKey });
   },
 
   rename_child(db, { kind, item, name }) {
@@ -168,12 +211,7 @@ export const RULES = {
   remove_child(db, { kind, item }) {
     const r = child(db, kind, item);
     if (kind === 'backpack') throw new RuleError('Backpack slots are fixed.');
-    const writes = [del(kind, r.id)];
-    if (kind === 'power') {                 // removing a power lowers Ruin
-      const c = db.get('character', r.character);
-      if (c) writes.push(patch('character', c, { ruin: clamp(c.ruin - 1, 1, RUIN_MAX) }));
-    }
-    return done(writes);
+    return done([del(kind, r.id)]);
   },
 
   toggle_marked(db, { item }) {
