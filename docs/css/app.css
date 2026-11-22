@@ -399,3 +399,19 @@ table.ov { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
 .ledger-row.fixed .ledger-amount { padding-right: 0.25rem; }
 .ledger-row.fixed::after { content: ''; width: 1.6rem; flex: none; }
 .ledger-empty { padding: 0.25rem 0; }
+
+/* --- Fort Duhrin (Hearthfire) at the bottom of the sheet ------------------------------ */
+.fort-duhrin { margin-top: 1.25rem; }
+.fd-toggle { font: inherit; font-size: 1.125rem; font-weight: 700; color: inherit; background: none; border: none;
+  padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; }
+.fd-arrow { font-size: 0.75em; opacity: 0.7; }
+.fd-body { margin-top: 0.5rem; }
+.hf-p { font-size: 0.8rem; opacity: 0.75; line-height: 1.35; margin: 0.4rem 0; }
+.hf-item { display: flex; gap: 0.4rem; align-items: flex-start; cursor: pointer; font-size: 0.8rem; line-height: 1.35; margin: 0.3rem 0; }
+.hf-item input { margin-top: 0.1rem; flex: none; }
+.hf-bullet { position: relative; padding-left: 1rem; font-size: 0.8rem; line-height: 1.35; margin: 0.25rem 0; }
+.hf-bullet::before { content: "\2022"; position: absolute; left: 0.2rem; }
+.hf-boxes { display: flex; gap: 0.4rem; margin: 0.35rem 0 0.15rem; }
+.hf-boxes .box-btn { padding: 0; background: none; color: inherit; }
+.hf-boxes .box-btn.on { background: var(--base-content); }
+.hf-secret { margin: 0.25rem 0; }

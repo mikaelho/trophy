@@ -1,3 +1,4 @@
+import { HEARTHFIRE_KEYS } from './hearthfire.js';
 // The game's operations, run in the page. Each takes the local copy of the data (`db`: get,
 // all, childrenOf) and the arguments, and returns {writes, result}: the batch to send to the
 // relay. A write that depends on what was read carries ifRev (the revision it was read at),
@@ -8,10 +9,10 @@
 
 export const FREE_POWERS = 3, FREE_SKILLS = 4, BACKPACK_SLOTS = 6, RUIN_MAX = 6, HOARD_MAX = 50, AMMO_MAX = 3;
 const HABIT_COUNT = 6;
-const TEXT_FIELDS = new Set(['name', 'gender', 'player_name', 'occupation', 'background', 'look', 'drive', 'conditions', 'notes']);
+const TEXT_FIELDS = new Set(['name', 'gender', 'player_name', 'occupation', 'background', 'look', 'drive', 'conditions', 'notes', 'hearthfire_secret']);
 const INT_FIELDS = new Set(['hoard', 'hunt_tokens']);
 const FLAG_FIELDS = new Set(['hireling', 'archived']);
-const MAX_LEN = { name: 120, gender: 60, player_name: 120, occupation: 200, background: 200, look: 200 };
+const MAX_LEN = { name: 120, gender: 60, player_name: 120, occupation: 200, background: 200, look: 200, hearthfire_secret: 300 };
 const LIST_KINDS = new Set(['power', 'skill', 'household', 'combat', 'found', 'backpack']);
 const CHILD_KINDS = [...LIST_KINDS, 'ledger'];
 const MONSTER_TEXT = { name: 200, description: 400, defences: null, weakness: 300 };
@@ -123,7 +124,7 @@ export const RULES = {
     const id = newId();
     const writes = [put('character', id, {
       name: '', gender: '', player_name: '', occupation: '', background: '', look: '', drive: '', conditions: '', notes: '',
-      hoard: 0, hunt_tokens: 0, hireling: false, archived: false,
+      hoard: 0, hunt_tokens: 0, hireling: false, archived: false, hearthfire_marks: {}, hearthfire_secret: '',
       created_at: new Date().toISOString(),
     }, 0)];
     for (let i = 0; i < BACKPACK_SLOTS; i++) writes.push(put('backpack', newId(), { character: id, name: '', uses: 0, slot: i, position: i }, 0));
@@ -141,6 +142,15 @@ export const RULES = {
     if (!FLAG_FIELDS.has(field)) throw new RuleError('Unknown flag: ' + field);
     const c = character(db, id);
     return done([patch('character', c, { [field]: !c[field] })]);
+  },
+
+  // Fort Duhrin: mark or clear one box.
+  toggle_hearthfire(db, { id, key }) {
+    if (!HEARTHFIRE_KEYS.has(key)) throw new RuleError('Unknown Fort Duhrin box: ' + key);
+    const c = character(db, id);
+    const marks = { ...(c.hearthfire_marks || {}) };
+    if (marks[key]) delete marks[key]; else marks[key] = true;
+    return done([patch('character', c, { hearthfire_marks: marks })]);
   },
 
   save_field(db, { id, field, value }) {

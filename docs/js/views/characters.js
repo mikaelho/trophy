@@ -5,10 +5,12 @@ import { repeat } from '../../vendor/lit-html/directives/repeat.js';
 import { live } from '../../vendor/lit-html/directives/live.js';
 import { byPosition, bySlot, compareIds, burdenOf, ruinOf, coinOf, FREE_POWERS, FREE_SKILLS, RUIN_MAX, HOARD_MAX, AMMO_MAX } from '../model/rules.js';
 import { ledgerDialog, openLedger } from './ledger.js';
+import { HEARTHFIRE } from '../model/hearthfire.js';
 import { editValue, markdown, attempt, toast, dieIcon } from '../ui.js';
 
 export { burdenOf, ruinOf, coinOf, HOARD_MAX };
 const LOCKED_TITLE = 'Someone is editing this';
+const FD_KEY = 'trophy-fortduhrin';
 
 export const characterLabel = c => {
   const name = c.name.trim() || 'Unnamed character', occ = c.occupation.trim();
@@ -127,18 +129,46 @@ export function characterSheet(app, id) {
       <input class="input input-xs" name="name" placeholder=${placeholder} autocomplete="off" />
     </form>`;
 
-  const listCard = (title, note, kind, model, free, placeholder, alwaysBurden = false) => {
-    const items = data.childrenOf(model, c.id);
-    return html`<div class="sheet-card">
-      <div class="card-head"><div class="field-label">${title}</div><div class="hint">${note}</div></div>
-      <div class="rows">${repeat(items, r => r.id, (r, i) => html`
+  const listRows = (kind, model, free, placeholder, alwaysBurden = false) => html`
+      <div class="rows">${repeat(data.childrenOf(model, c.id), r => r.id, (r, i) => html`
         <div class="list-row">
           <div class="burden-bar ${alwaysBurden || i >= free ? 'on' : ''}"></div>
           ${rowInput(kind, r)}${removeBtn(kind, r)}
         </div>`)}</div>
-      ${addForm(kind, placeholder)}
+      ${addForm(kind, placeholder)}`;
+  const listCard = (title, note, kind, model, free, placeholder, alwaysBurden = false) => html`<div class="sheet-card">
+      <div class="card-head"><div class="field-label">${title}</div><div class="hint">${note}</div></div>
+      ${listRows(kind, model, free, placeholder, alwaysBurden)}
     </div>`;
+
+  // Fort Duhrin: the Hearthfire sections, open or closed per viewer (kept in this browser).
+  const marks = c.hearthfire_marks || {};
+  const fdOpen = (() => { try { return localStorage.getItem(FD_KEY) !== 'closed'; } catch { return true; } })();
+  const toggleFd = () => {
+    try { localStorage.setItem(FD_KEY, fdOpen ? 'closed' : 'open'); } catch { /* private window: stays as it is */ }
+    app.render();
   };
+  const fdBlock = b => {
+    switch (b.t) {
+      case 'p': return html`<p class="hf-p">${b.text}</p>`;
+      case 'bullet': return html`<div class="hf-bullet">${b.text}</div>`;
+      case 'check': return html`<label class="hf-item"><input type="checkbox" class="checkbox small"
+        .checked=${live(!!marks[b.key])} @click=${() => op('toggle_hearthfire', { key: b.key })} /><span>${b.text}</span></label>`;
+      case 'boxes': return html`<div class="hf-boxes">${b.keys.map(k => html`<button class="box-btn ${marks[k] ? 'on' : ''}"
+        title=${marks[k] ? 'Marked' : 'Not marked'} aria-pressed=${!!marks[k]} @click=${() => op('toggle_hearthfire', { key: k })}></button>`)}</div>`;
+      case 'secret': return lineInput('hearthfire_secret', 'hf-secret', { placeholder: "the shopkeeper's secret" });
+      case 'hoard_number': return html`<div class="hoard">${lineInput('hoard', 'number', { type: 'number', min: 0, max: HOARD_MAX })}
+        <span class="dim-text">/ ${HOARD_MAX}</span></div>`;
+      case 'household_list': return listRows('household', 'household', 0, '+ add detail', true);
+      default: return nothing;
+    }
+  };
+  const fortDuhrin = html`<section class="fort-duhrin">
+      <button class="fd-toggle" aria-expanded=${fdOpen} @click=${toggleFd}>
+        <span class="fd-arrow">${fdOpen ? '▾' : '▸'}</span> Fort Duhrin</button>
+      ${fdOpen ? html`<div class="sheet-columns fd-body">${HEARTHFIRE.map(sec => html`<div class="sheet-card">
+        <div class="field-label">${sec.title}</div>${sec.blocks.map(fdBlock)}</div>`)}</div>` : nothing}
+    </section>`;
 
   const randomiseLook = async () => {
     const word = await app.randomDescriptor();
@@ -209,14 +239,6 @@ export function characterSheet(app, id) {
       <div class="sheet-card"><div class="field-label">Conditions</div>${noteField('conditions')}</div>
 
       <div class="sheet-card">
-        <div class="field-label">Hoard</div>
-        <div class="hoard">${lineInput('hoard', 'number', { type: 'number', min: 0, max: HOARD_MAX })}
-          <span class="dim-text">/ ${HOARD_MAX}</span></div>
-      </div>
-
-      ${listCard('Household', '0 free', 'household', 'household', 0, '+ add detail', true)}
-
-      <div class="sheet-card">
         <div class="card-head center"><div class="field-label">Backpack Equipment</div><div class="field-label">Uses</div></div>
         <div class="rows">${repeat(backpack, b => b.id, b => html`
           <div class="list-row center">
@@ -260,5 +282,6 @@ export function characterSheet(app, id) {
     <div class="sheet-card wide">
       <div class="field-label">Notes</div>${noteField('notes', 3)}
     </div>
+    ${fortDuhrin}
     ${ledgerDialog(app, c)}`;
 }

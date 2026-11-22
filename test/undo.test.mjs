@@ -9,7 +9,7 @@ import { compute, ruinOf } from '../docs/js/model/rules.js';
 import { DocView } from '../docs/js/model/view.js';
 import { record, revert, describe } from '../docs/js/model/undo.js';
 
-const dump = JSON.parse(readFileSync(new URL('../trophy-db.json', import.meta.url), 'utf8'));
+const dump = JSON.parse(readFileSync(new URL('./fixtures/django-dump.json', import.meta.url), 'utf8'));
 
 function setup(docs = {}) {
   const store = new DocStore(nodeSql());

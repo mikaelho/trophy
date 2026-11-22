@@ -19,6 +19,9 @@
 //   ledger/<id>      {character, field: 'ruin'|'burden'|'coin', amount, description, position, created_at}
 //   (Ruin starts at 1, an implied "+1 Initial" line). The upgrade turns the old values into one
 //   "Before the ledger" entry each; Burdens are no longer worked out from the lists.
+// Version 5: the Fort Duhrin section came back: characters have hearthfire_marks {key: true}
+//   and hearthfire_secret (left out when the Django data was converted; Tracksey's marks from
+//   the last Django dump are put back).
 // Version 4: Burdens also start at 1 ("+1 Initial"), so the "Before the ledger" Burdens line is
 //   one less (removed when that makes it 0).
 // `character` in child records is the character's id. created_at is an ISO time.
@@ -33,7 +36,7 @@
 // by the relay as raw rows. Django dumps (dumpdata files, and exports of that relay version)
 // convert to version 1 with fromDjangoDump.
 
-export const DATA_VERSION = 4;
+export const DATA_VERSION = 5;
 
 const STEPS = {
   1: ({ legacy }) => v1FromRecords(recordsFromTables(legacy || {})),
@@ -50,6 +53,23 @@ const STEPS = {
     }
     return out;
   },
+  5: ({ docs }) => {
+    const out = {};
+    for (const [k, d] of Object.entries(docs)) {
+      if (!k.startsWith('character/')) { out[k] = d; continue; }
+      const lost = LOST_MARKS[k];
+      const marks = d.hearthfire_marks && typeof d.hearthfire_marks === 'object' ? d.hearthfire_marks
+        : lost && d.name === lost.name ? { ...lost.marks } : {};
+      out[k] = { ...d, hearthfire_marks: marks, hearthfire_secret: typeof d.hearthfire_secret === 'string' ? d.hearthfire_secret : '' };
+    }
+    return out;
+  },
+};
+
+// The Fort Duhrin marks in the last Django dump (2026-10-30) that the conversion dropped.
+const LOST_MARKS = {
+  'character/8': { name: 'Tracksey', marks: { 'healing-0': true, 'household-ft-0': true, 'household-ft-1': true,
+    'carousing-0': true, 'hoard-ft-0': true, 'hoard-ft-1': true } },
 };
 
 // Version 2 -> 3: the current Ruin, Burdens and Coin of each character become ledger entries.
@@ -167,6 +187,9 @@ export function v1FromRecords(records) {
       background: str(c.background), look: str(c.look), drive: str(c.drive), conditions: str(c.conditions),
       notes: str(c.notes), ruin: int(c.ruin, 1), hoard: int(c.hoard), coin: int(c.coin), hunt_tokens: int(c.hunt_tokens),
       burden_offset: int(c.burden_offset), hireling: !!c.hireling, archived: !!c.archived,
+      ...(c.hearthfire_marks && typeof c.hearthfire_marks === 'object'
+        ? { hearthfire_marks: Object.fromEntries(Object.keys(c.hearthfire_marks).filter(k => c.hearthfire_marks[k]).map(k => [k, true])) } : {}),
+      ...(typeof c.hearthfire_secret === 'string' ? { hearthfire_secret: c.hearthfire_secret } : {}),
       created_at: c.created_at || new Date(0).toISOString(),
     };
   }

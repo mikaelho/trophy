@@ -11,7 +11,7 @@ import { DATA_VERSION, upgrade, fromDjangoDump, BEFORE_LEDGER } from '../docs/js
 import { compute, burdenOf, ruinOf, coinOf, ledgerEntries, parseAmount, formatAmount, RuleError } from '../docs/js/model/rules.js';
 import { DocView } from '../docs/js/model/view.js';
 
-const dump = JSON.parse(readFileSync(new URL('../trophy-db.json', import.meta.url), 'utf8'));
+const dump = JSON.parse(readFileSync(new URL('./fixtures/django-dump.json', import.meta.url), 'utf8'));
 const legacyTables = JSON.parse(readFileSync(new URL('./fixtures/legacy-tables.json', import.meta.url), 'utf8'));
 const count = (docs, kind) => Object.keys(docs).filter(k => k.startsWith(kind + '/')).length;
 
@@ -365,4 +365,39 @@ test('notes: add, edit, remove', () => {
   assert.deepEqual([v.get('note', id).title, v.get('note', id).description], ['The Baron', 'Owes the ferry keeper.\nHides in the tower.']);
   run(v, 'note_remove', { id });
   assert.equal(v.get('note', id), null);
+});
+
+test('Fort Duhrin: boxes toggle, the secret saves, and version 5 brings back what the conversion lost', () => {
+  const { page, run } = setup();
+  const v = page();
+  const { id } = run(v, 'new_character');
+  assert.deepEqual(v.get('character', id).hearthfire_marks, {});
+  run(v, 'toggle_hearthfire', { id, key: 'hoard-ft-0' });
+  run(v, 'toggle_hearthfire', { id, key: 'equipment-box-2' });
+  run(v, 'toggle_hearthfire', { id, key: 'hoard-ft-0' });
+  assert.deepEqual(v.get('character', id).hearthfire_marks, { 'equipment-box-2': true });
+  assert.throws(() => compute(v, 'toggle_hearthfire', { id, key: 'nope' }), /Unknown Fort Duhrin box/);
+  run(v, 'save_field', { id, field: 'hearthfire_secret', value: '  Owns a cursed lantern ' });
+  assert.equal(v.get('character', id).hearthfire_secret, 'Owns a cursed lantern');
+
+  // a version 4 room: no Fort Duhrin fields; Tracksey gets the marks from the last Django dump
+  const v4 = upgrade(1, { docs: fromDjangoDump(dump) }, 4);
+  for (const k of Object.keys(v4)) if (k.startsWith('character/')) { delete v4[k].hearthfire_marks; delete v4[k].hearthfire_secret; }
+  v4['character/8'] = { ...v4['character/8'], name: 'Tracksey' };
+  const v5 = upgrade(4, { docs: v4 });
+  assert.deepEqual(Object.keys(v5['character/8'].hearthfire_marks).sort(),
+    ['carousing-0', 'healing-0', 'hoard-ft-0', 'hoard-ft-1', 'household-ft-0', 'household-ft-1']);
+  for (const k of Object.keys(v5)) if (k.startsWith('character/') && k !== 'character/8') {
+    assert.deepEqual(v5[k].hearthfire_marks, {}, k); assert.equal(v5[k].hearthfire_secret, '');
+  }
+  // marks already there are kept
+  v4['character/8'].hearthfire_marks = { 'healing-1': true };
+  assert.deepEqual(upgrade(4, { docs: v4 })['character/8'].hearthfire_marks, { 'healing-1': true });
+});
+
+test('the latest Django dump keeps its Fort Duhrin marks when imported', () => {
+  const latest = JSON.parse(readFileSync(new URL('../trophy-db.json', import.meta.url), 'utf8'));
+  const docs = upgrade(1, { docs: fromDjangoDump(latest) });
+  const t = Object.values(docs).find(d => d.name === 'Tracksey' && 'hearthfire_marks' in d);
+  assert.equal(Object.keys(t.hearthfire_marks).length, 6);
 });

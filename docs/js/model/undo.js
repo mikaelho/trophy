@@ -114,6 +114,7 @@ export function describe(view, op, args = {}) {
     case 'new_character': return 'new character';
     case 'delete_character': return `delete ${char(args.id)}`;
     case 'toggle_flag': return `${char(args.id)}: ${field(args.field)}`;
+    case 'toggle_hearthfire': return `${char(args.id)}: Fort Duhrin box`;
     case 'save_field': return `${char(args.id)}: ${field(args.field)}`;
     case 'append_look': return `${char(args.id)}: look`;
     case 'ledger_add': return `${char(args.id)}: ${LEDGER[args.field] || 'ledger'} ${signed(args.amount)} ${quote(args.description)}`.trim();

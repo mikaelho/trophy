@@ -27,6 +27,8 @@ dice and the relay passes the faces to everyone; Equipment rolls are each viewer
 - `js/transport.js` – the relay client, copied from vod-js
 - `js/ui.js` – edit-field behaviour, markdown, small helpers
 - `js/views/characters.js` – character list and sheet
+- `js/model/hearthfire.js` – the Fort Duhrin (Hearthfire) text at the bottom of the sheet, as in the
+  Django app; each character stores only its marked boxes and the shopkeeper's secret
 - `js/views/ledger.js` – the ledger dialogs of Ruin, Burdens and Coin (see below)
 - `js/views/overview.js` – read-only table of all characters (column groups fold per viewer)
 - `js/views/roller.js` – shared dice mat, per-character sections, roll reference
