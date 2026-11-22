@@ -1,838 +1,811 @@
 {
-  "format": "trophy-docs",
-  "dataVersion": 1,
-  "exportedAt": "2026-11-04T08:41:07.143Z",
+  "dataVersion": 4,
   "docs": {
     "backpack/25": {
       "character": "5",
       "name": "",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/26": {
       "character": "5",
       "name": "",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/27": {
       "character": "5",
       "name": "",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/28": {
       "character": "5",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/29": {
       "character": "5",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/30": {
       "character": "5",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/31": {
       "character": "6",
       "name": "Mallet",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/32": {
       "character": "6",
       "name": "",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/33": {
       "character": "6",
       "name": "",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/34": {
       "character": "6",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/35": {
       "character": "6",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/36": {
       "character": "6",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/37": {
       "character": "7",
       "name": "Flute",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/38": {
       "character": "7",
       "name": "",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/39": {
       "character": "7",
       "name": "",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/40": {
       "character": "7",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/41": {
       "character": "7",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/42": {
       "character": "7",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/43": {
       "character": "8",
       "name": "Emergency candles, 2 hrs (12)",
       "position": 0,
-      "uses": 1,
-      "slot": 0
+      "slot": 0,
+      "uses": 1
     },
     "backpack/44": {
       "character": "8",
       "name": "Compact signal mirror",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/45": {
       "character": "8",
       "name": "Strong masking scent (6 uses)",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/46": {
       "character": "8",
       "name": "Paracord 30m - dangerously frayed",
       "position": 3,
-      "uses": 1,
-      "slot": 3
+      "slot": 3,
+      "uses": 1
     },
     "backpack/47": {
       "character": "8",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/48": {
       "character": "8",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/49": {
       "character": "9",
       "name": "Steel chain (8 m)",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/50": {
       "character": "9",
       "name": "Steel restraints / handcuffs",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/51": {
       "character": "9",
       "name": "Mechanical puzzle box",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/52": {
       "character": "9",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/53": {
       "character": "9",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/54": {
       "character": "9",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/55": {
       "character": "10",
       "name": "Bottle of good spirits",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/56": {
       "character": "10",
       "name": "Sealing stamp & forensic/security wax",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/57": {
       "character": "10",
       "name": "Military signal whistle",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/58": {
       "character": "10",
       "name": "Shackles (for Beast-form)",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/59": {
       "character": "10",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/60": {
       "character": "10",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/61": {
       "character": "11",
       "name": "Precision timer",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/62": {
       "character": "11",
       "name": "Numbing herbs",
       "position": 1,
-      "uses": 3,
-      "slot": 1
+      "slot": 1,
+      "uses": 3
     },
     "backpack/63": {
       "character": "11",
       "name": "Sewing kit",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/64": {
       "character": "11",
-      "name": "",
+      "name": "Glowing orb",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/65": {
       "character": "11",
-      "name": "",
+      "name": "Rope",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/66": {
       "character": "11",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/67": {
       "character": "12",
       "name": "Chalk, 3 colors",
       "position": 0,
-      "uses": 12,
-      "slot": 0
+      "slot": 0,
+      "uses": 12
     },
     "backpack/68": {
       "character": "12",
       "name": "Crowbar",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/69": {
       "character": "12",
       "name": "Heirloom compass",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/70": {
       "character": "12",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/71": {
       "character": "12",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/72": {
       "character": "12",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/73": {
       "character": "13",
       "name": "Twine (300')",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/74": {
       "character": "13",
       "name": "Wind chimes",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/75": {
       "character": "13",
       "name": "Wooden mask, monstrous",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/76": {
       "character": "13",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/77": {
       "character": "13",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/78": {
       "character": "13",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/79": {
       "character": "14",
       "name": "Glass marbles (30)",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/80": {
       "character": "14",
       "name": "Pot of tar",
       "position": 1,
-      "uses": 6,
-      "slot": 1
+      "slot": 1,
+      "uses": 6
     },
     "backpack/81": {
       "character": "14",
       "name": "Scroll tube (mystery scroll)",
       "position": 2,
-      "uses": 0,
-      "slot": 2
+      "slot": 2,
+      "uses": 0
     },
     "backpack/82": {
       "character": "14",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/83": {
       "character": "14",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/84": {
       "character": "14",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "backpack/85": {
       "character": "15",
       "name": "Troll blood (heals 1 Ruin)",
       "position": 0,
-      "uses": 0,
-      "slot": 0
+      "slot": 0,
+      "uses": 0
     },
     "backpack/86": {
       "character": "15",
       "name": "Jar of glowworms (6)",
       "position": 1,
-      "uses": 0,
-      "slot": 1
+      "slot": 1,
+      "uses": 0
     },
     "backpack/87": {
       "character": "15",
       "name": "Vermin repellent",
       "position": 2,
-      "uses": 3,
-      "slot": 2
+      "slot": 2,
+      "uses": 3
     },
     "backpack/88": {
       "character": "15",
       "name": "",
       "position": 3,
-      "uses": 0,
-      "slot": 3
+      "slot": 3,
+      "uses": 0
     },
     "backpack/89": {
       "character": "15",
       "name": "",
       "position": 4,
-      "uses": 0,
-      "slot": 4
+      "slot": 4,
+      "uses": 0
     },
     "backpack/90": {
       "character": "15",
       "name": "",
       "position": 5,
-      "uses": 0,
-      "slot": 5
+      "slot": 5,
+      "uses": 0
     },
     "character/10": {
-      "name": "Evian",
-      "gender": "fe/male",
-      "player_name": "Julle",
-      "occupation": "Oracle",
-      "background": "Banished Dancer",
-      "look": "Devious, cryptic, feverish",
-      "drive": "Break the siege on your sibling’s fortress",
-      "conditions": "1. Avoiding bushes\n2. ~~Servant of Malphast~~\n3. The Birthing Dream\n4. Too respectful of Scarecrow's powers",
-      "notes": "- Tall, muscular, flowing dark hair, toga that reveals & hides in/appropriately\n- Fake ritual is REALLY convincing to the rest of the party",
-      "ruin": 6,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 1,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-06T16:00:06.870Z"
+      "background": "Banished Dancer",
+      "conditions": "1. Avoiding bushes\n2. ~~Servant of Malphast~~\n3. The Birthing Dream\n4. Too respectful of Scarecrow's powers",
+      "created_at": "2026-09-06T16:00:06.870Z",
+      "drive": "Break the siege on your sibling’s fortress",
+      "gender": "fe/male",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 1,
+      "look": "Devious, cryptic, feverish",
+      "name": "Evian",
+      "notes": "- Tall, muscular, flowing dark hair, toga that reveals & hides in/appropriately\n- Fake ritual is REALLY convincing to the rest of the party",
+      "occupation": "Oracle",
+      "player_name": "Julle"
     },
     "character/11": {
-      "name": "Inda",
-      "gender": "Male",
-      "player_name": "Julle",
-      "occupation": "Herbalist",
-      "background": "Failed Pilgrim",
-      "look": "blunt, flushed, muscular",
-      "drive": "Buy the orphanage where you were mistreated",
-      "conditions": "",
-      "notes": "",
-      "ruin": 5,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 1,
-      "burden_offset": 3,
-      "hireling": false,
       "archived": false,
-      "created_at": "2026-09-12T17:13:09.520Z"
+      "background": "Failed Pilgrim",
+      "conditions": "Guilt (for abandoning so. behind)",
+      "created_at": "2026-09-12T17:13:09.520Z",
+      "drive": "Buy the orphanage where you were mistreated",
+      "gender": "Male",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "blunt, flushed, muscular",
+      "name": "Inda",
+      "notes": "The one who helped Inda at the orphanange, Osto, could not get out - Inda owes to them the ending of the mistreatment by the owners, who knows how long they have left before things go too far.",
+      "occupation": "Herbalist",
+      "player_name": "Julle"
     },
     "character/12": {
-      "name": "Foret",
-      "gender": "",
-      "player_name": "",
-      "occupation": "Guide",
-      "background": "Escaped Cultist",
-      "look": "whispery, dusty, cumbersome",
-      "drive": "Finance an expedition into the Blossoming Sea",
-      "conditions": "",
-      "notes": "",
-      "ruin": 4,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-12T17:13:09.529Z"
+      "background": "Escaped Cultist",
+      "conditions": "",
+      "created_at": "2026-09-12T17:13:09.529Z",
+      "drive": "Finance an expedition into the Blossoming Sea",
+      "gender": "",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "whispery, dusty, cumbersome",
+      "name": "Foret",
+      "notes": "",
+      "occupation": "Guide",
+      "player_name": ""
     },
     "character/13": {
-      "name": "Obeha",
-      "gender": "",
-      "player_name": "",
-      "occupation": "Nest",
-      "background": "Lured Innocent",
-      "look": "towering, stained, unruly",
-      "drive": "Become part of the Swirling Court",
-      "conditions": "",
-      "notes": "",
-      "ruin": 2,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-12T17:13:09.538Z"
+      "background": "Lured Innocent",
+      "conditions": "",
+      "created_at": "2026-09-12T17:13:09.538Z",
+      "drive": "Become part of the Swirling Court",
+      "gender": "",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "towering, stained, unruly",
+      "name": "Obeha",
+      "notes": "",
+      "occupation": "Nest",
+      "player_name": ""
     },
     "character/14": {
-      "name": "Benah",
-      "gender": "",
-      "player_name": "",
-      "occupation": "Bodyguard",
-      "background": "Devoted Widow",
-      "look": "upright, nervous, worn",
-      "drive": "Pay your father's debt to Bright-Teeth Assyrio",
-      "conditions": "",
-      "notes": "",
-      "ruin": 4,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-12T17:13:09.545Z"
+      "background": "Devoted Widow",
+      "conditions": "",
+      "created_at": "2026-09-12T17:13:09.545Z",
+      "drive": "Pay your father's debt to Bright-Teeth Assyrio",
+      "gender": "",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "upright, nervous, worn",
+      "name": "Benah",
+      "notes": "",
+      "occupation": "Bodyguard",
+      "player_name": ""
     },
     "character/15": {
-      "name": "Otso",
-      "gender": "",
-      "player_name": "",
-      "occupation": "Ox",
-      "background": "Oppressed Laborer",
-      "look": "creaking, muscular, many rings",
-      "drive": "Take Cyrus's place at the Earthen Council",
-      "conditions": "",
-      "notes": "",
-      "ruin": 3,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-12T17:13:09.553Z"
+      "background": "Oppressed Laborer",
+      "conditions": "",
+      "created_at": "2026-09-12T17:13:09.553Z",
+      "drive": "Take Cyrus's place at the Earthen Council",
+      "gender": "",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "creaking, muscular, many rings",
+      "name": "Otso",
+      "notes": "",
+      "occupation": "Ox",
+      "player_name": ""
     },
     "character/5": {
-      "name": "Lora",
-      "gender": "Female",
-      "player_name": "Hireling",
-      "occupation": "Mercenary",
-      "background": "",
-      "look": "Clipped, precise, prowling",
-      "drive": "",
-      "conditions": "",
-      "notes": "",
-      "ruin": 4,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": true,
       "archived": true,
-      "created_at": "2026-09-05T08:12:34.071Z"
+      "background": "",
+      "conditions": "",
+      "created_at": "2026-09-05T08:12:34.071Z",
+      "drive": "",
+      "gender": "Female",
+      "hireling": true,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "Clipped, precise, prowling",
+      "name": "Lora",
+      "notes": "",
+      "occupation": "Mercenary",
+      "player_name": "Hireling"
     },
     "character/6": {
-      "name": "Daian",
-      "gender": "Male",
-      "player_name": "Hireling",
-      "occupation": "Blacksmith",
-      "background": "",
-      "look": "",
-      "drive": "",
-      "conditions": "",
-      "notes": "",
-      "ruin": 2,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 2,
-      "hireling": true,
       "archived": true,
-      "created_at": "2026-09-05T08:13:59.282Z"
+      "background": "",
+      "conditions": "",
+      "created_at": "2026-09-05T08:13:59.282Z",
+      "drive": "",
+      "gender": "Male",
+      "hireling": true,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "",
+      "name": "Daian",
+      "notes": "",
+      "occupation": "Blacksmith",
+      "player_name": "Hireling"
     },
     "character/7": {
-      "name": "Talia",
-      "gender": "Female",
-      "player_name": "Hireling",
-      "occupation": "Hearthwise",
-      "background": "",
-      "look": "Solid, popping, whiff of alcohol, bruised",
-      "drive": "",
-      "conditions": "",
-      "notes": "",
-      "ruin": 5,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 2,
-      "hireling": true,
       "archived": false,
-      "created_at": "2026-09-05T08:36:39.727Z"
+      "background": "",
+      "conditions": "",
+      "created_at": "2026-09-05T08:36:39.727Z",
+      "drive": "",
+      "gender": "Female",
+      "hireling": true,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "Solid, popping, whiff of alcohol, bruised",
+      "name": "Talia",
+      "notes": "",
+      "occupation": "Hearthwise",
+      "player_name": "Hireling"
     },
     "character/8": {
-      "name": "Tracksey",
-      "gender": "M",
-      "player_name": "Pasi",
-      "occupation": "Lockpick",
-      "background": "Liberated prisoner",
-      "look": "Hoarse, utilitarian, loose",
-      "drive": "Commission a glorious statue of your deity, Saint Yadyck",
-      "conditions": "I killed my brother",
-      "notes": "Saint Yadyck of the Loam:\n\n- Her followers’ rich mulch is sprinkled across their fecund fields, but none will share in their silent harvest.\n- No one speaks the name Yadyck anymore\n- Favorite tavern: Smooth Chainsaw\n-",
-      "ruin": 3,
-      "hoard": 6,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": false,
-      "created_at": "2026-09-06T15:35:01.231Z"
+      "background": "Liberated prisoner",
+      "conditions": "",
+      "created_at": "2026-09-06T15:35:01.231Z",
+      "drive": "Commission a glorious statue of your deity, Saint Yadyck",
+      "gender": "M",
+      "hireling": false,
+      "hoard": 6,
+      "hunt_tokens": 0,
+      "look": "Hoarse, utilitarian, loose",
+      "name": "Tracksey",
+      "notes": "Saint Yadyck of the Loam:\n\n- Her followers’ rich mulch is sprinkled across their fecund fields, but none will share in their silent harvest.\n- No one speaks the name Yadyck anymore\n- Favorite tavern: Smooth Chainsaw\n-",
+      "occupation": "Lockpick",
+      "player_name": "Pasi"
     },
     "character/9": {
-      "name": "Vizzini",
-      "gender": "M",
-      "player_name": "Janne",
-      "occupation": "Lamb",
-      "background": "Reformed Thug",
-      "look": "short, bald, \"sicilian\"",
-      "drive": "Bribe the justiciars so they erase your crimes",
-      "conditions": "",
-      "notes": "",
-      "ruin": 3,
-      "hoard": 0,
-      "coin": 0,
-      "hunt_tokens": 0,
-      "burden_offset": 0,
-      "hireling": false,
       "archived": true,
-      "created_at": "2026-09-06T15:59:59.878Z"
+      "background": "Reformed Thug",
+      "conditions": "",
+      "created_at": "2026-09-06T15:59:59.878Z",
+      "drive": "Bribe the justiciars so they erase your crimes",
+      "gender": "M",
+      "hireling": false,
+      "hoard": 0,
+      "hunt_tokens": 0,
+      "look": "short, bald, \"sicilian\"",
+      "name": "Vizzini",
+      "notes": "",
+      "occupation": "Lamb",
+      "player_name": "Janne"
     },
     "combat/10": {
+      "ammo": 0,
       "character": "10",
-      "name": "Heavy pneumatic crossbow",
-      "position": 0,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Heavy pneumatic crossbow",
+      "position": 0
     },
     "combat/11": {
+      "ammo": 0,
       "character": "8",
-      "name": "Powered impact maul",
-      "position": 0,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Powered impact maul",
+      "position": 0
     },
     "combat/13": {
+      "ammo": 0,
       "character": "11",
-      "name": "Hooked sickle, very sharp",
-      "position": 0,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Hooked sickle, very sharp",
+      "position": 0
     },
     "combat/14": {
+      "ammo": 0,
       "character": "11",
-      "name": "BROKEN: Tactical net",
-      "position": 1,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Tactical net",
+      "position": 1
     },
     "combat/15": {
+      "ammo": 0,
       "character": "12",
-      "name": "Silenced one-shot pistol",
-      "position": 0,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Silenced one-shot pistol",
+      "position": 0
     },
     "combat/17": {
+      "ammo": 0,
       "character": "12",
-      "name": "Hunting spear",
-      "position": 2,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Hunting spear",
+      "position": 2
     },
     "combat/18": {
+      "ammo": 0,
       "character": "13",
-      "name": "Fae-crafted chainmail",
-      "position": 0,
       "kind": "armor",
       "marked": false,
-      "ammo": 0
+      "name": "Fae-crafted chainmail",
+      "position": 0
     },
     "combat/19": {
+      "ammo": 0,
       "character": "13",
-      "name": "Full plate",
-      "position": 1,
       "kind": "armor",
       "marked": false,
-      "ammo": 0
+      "name": "Full plate",
+      "position": 1
     },
     "combat/20": {
+      "ammo": 0,
       "character": "13",
-      "name": "Gnarled staff",
-      "position": 2,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Gnarled staff",
+      "position": 2
     },
     "combat/21": {
+      "ammo": 0,
       "character": "14",
-      "name": "Polished scalemail",
-      "position": 0,
       "kind": "armor",
       "marked": false,
-      "ammo": 0
+      "name": "Polished scalemail",
+      "position": 0
     },
     "combat/22": {
+      "ammo": 0,
       "character": "14",
-      "name": "Ornate cuirass",
-      "position": 1,
       "kind": "armor",
       "marked": false,
-      "ammo": 0
+      "name": "Ornate cuirass",
+      "position": 1
     },
     "combat/23": {
+      "ammo": 0,
       "character": "14",
-      "name": "Hefty cudgel",
-      "position": 2,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Hefty cudgel",
+      "position": 2
     },
     "combat/24": {
+      "ammo": 0,
       "character": "15",
-      "name": "Hefty \"walking\" staff",
-      "position": 0,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Hefty \"walking\" staff",
+      "position": 0
     },
     "combat/26": {
+      "ammo": 0,
       "character": "15",
-      "name": "Small but vicious dog",
-      "position": 2,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Small but vicious dog",
+      "position": 2
     },
     "combat/28": {
+      "ammo": 0,
       "character": "8",
-      "name": "Shotgun",
-      "position": 2,
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Shotgun",
+      "position": 2
     },
     "combat/29": {
+      "ammo": 0,
       "character": "8",
-      "name": "Reinforced combat gloves",
-      "position": 3,
       "kind": "armor",
-      "marked": true,
-      "ammo": 0
+      "marked": false,
+      "name": "Reinforced combat gloves",
+      "position": 3
     },
     "combat/4": {
+      "ammo": 0,
       "character": "5",
+      "kind": "weapon",
+      "marked": false,
       "name": "Big honking knife",
-      "position": 1,
-      "kind": "weapon",
-      "marked": false,
-      "ammo": 0
+      "position": 1
     },
-    "combat/5": {
-      "character": "5",
-      "name": "Shotgun",
-      "position": 2,
-      "kind": "weapon",
-      "marked": false,
-      "ammo": 0
-    },
-    "combat/6": {
-      "character": "6",
-      "name": "Sturdy helmet",
-      "position": 0,
+    "combat/484d471k4a": {
+      "ammo": 0,
+      "character": "11",
       "kind": "armor",
       "marked": false,
-      "ammo": 0
+      "name": "Armor of feathers",
+      "position": 2
     },
-    "combat/8": {
-      "character": "7",
-      "name": "Set of throwing knives",
-      "position": 0,
+    "combat/5": {
+      "ammo": 0,
+      "character": "5",
       "kind": "weapon",
       "marked": false,
-      "ammo": 0
+      "name": "Shotgun",
+      "position": 2
+    },
+    "combat/6": {
+      "ammo": 0,
+      "character": "6",
+      "kind": "armor",
+      "marked": false,
+      "name": "Sturdy helmet",
+      "position": 0
+    },
+    "combat/8": {
+      "ammo": 0,
+      "character": "7",
+      "kind": "weapon",
+      "marked": false,
+      "name": "Set of throwing knives",
+      "position": 0
     },
     "found/12": {
       "character": "10",
@@ -859,15 +832,10 @@
       "name": "Map",
       "position": 12
     },
-    "found/25": {
-      "character": "11",
-      "name": "brutal but sensitive metal bowl",
-      "position": 0
-    },
-    "found/26": {
+    "found/35571g624r": {
       "character": "8",
-      "name": "Smaragdi (3 coins)",
-      "position": 13
+      "name": "Jääpuikkotiirikat (4 coins)",
+      "position": 14
     },
     "found/4": {
       "character": "9",
@@ -894,10 +862,315 @@
       "name": "Free entry to Missus Jarazel's House of Fecund Delights",
       "position": 2
     },
+    "ledger/054i2g6n2i": {
+      "amount": 1,
+      "character": "8",
+      "created_at": "2026-11-15T21:02:35.513Z",
+      "description": "Gloves",
+      "field": "burden",
+      "position": 3
+    },
+    "ledger/0w5f4j6n0d": {
+      "amount": 2,
+      "character": "8",
+      "created_at": "2026-11-15T21:03:15.811Z",
+      "description": "Hiring Talia",
+      "field": "burden",
+      "position": 7
+    },
+    "ledger/0z4k72070d": {
+      "amount": -2,
+      "character": "8",
+      "created_at": "2026-11-22T20:22:48.937Z",
+      "description": "Firing Talia",
+      "field": "burden",
+      "position": 10
+    },
+    "ledger/10-burden": {
+      "amount": 1,
+      "character": "10",
+      "created_at": "2026-09-06T16:00:06.870Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/10-ruin": {
+      "amount": 5,
+      "character": "10",
+      "created_at": "2026-09-06T16:00:06.870Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/12-burden": {
+      "amount": 2,
+      "character": "12",
+      "created_at": "2026-09-12T17:13:09.529Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/12-ruin": {
+      "amount": 3,
+      "character": "12",
+      "created_at": "2026-09-12T17:13:09.529Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/13-burden": {
+      "amount": 3,
+      "character": "13",
+      "created_at": "2026-09-12T17:13:09.538Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/13-ruin": {
+      "amount": 1,
+      "character": "13",
+      "created_at": "2026-09-12T17:13:09.538Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/14-burden": {
+      "amount": 3,
+      "character": "14",
+      "created_at": "2026-09-12T17:13:09.545Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/14-ruin": {
+      "amount": 3,
+      "character": "14",
+      "created_at": "2026-09-12T17:13:09.545Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/15-burden": {
+      "amount": 2,
+      "character": "15",
+      "created_at": "2026-09-12T17:13:09.553Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/15-ruin": {
+      "amount": 2,
+      "character": "15",
+      "created_at": "2026-09-12T17:13:09.553Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/1l6d66145i": {
+      "amount": 2,
+      "character": "11",
+      "created_at": "2026-11-15T20:54:52.801Z",
+      "description": "Rituals",
+      "field": "ruin",
+      "position": 4
+    },
+    "ledger/1u0u6l5a1d": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-22T20:11:22.811Z",
+      "description": "Hit on a head while escaping",
+      "field": "ruin",
+      "position": 10
+    },
+    "ledger/283g0d094g": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-15T20:55:21.994Z",
+      "description": "Knifed",
+      "field": "ruin",
+      "position": 5
+    },
+    "ledger/33042w4b1q": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-15T20:53:21.483Z",
+      "description": "Sickle",
+      "field": "burden",
+      "position": 2
+    },
+    "ledger/342f4n0d6n": {
+      "amount": 1,
+      "character": "8",
+      "created_at": "2026-11-15T21:02:39.850Z",
+      "description": "Maul",
+      "field": "burden",
+      "position": 4
+    },
+    "ledger/360z0i5w0z": {
+      "amount": 1,
+      "character": "8",
+      "created_at": "2026-11-15T21:02:45.244Z",
+      "description": "Shotgun",
+      "field": "burden",
+      "position": 5
+    },
+    "ledger/3c6a5u1d6j": {
+      "amount": -1,
+      "character": "11",
+      "created_at": "2026-11-22T20:29:48.591Z",
+      "description": "Sleeping at Tracksey's",
+      "field": "ruin",
+      "position": 13
+    },
+    "ledger/3z6t044g3x": {
+      "amount": -1,
+      "character": "11",
+      "created_at": "2026-11-22T17:18:50.222Z",
+      "description": "Saved by the circle",
+      "field": "ruin",
+      "position": 9
+    },
+    "ledger/430m2r191i": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-15T21:01:29.549Z",
+      "description": "Food and drink",
+      "field": "burden",
+      "position": 8
+    },
+    "ledger/4k4d2t2u53": {
+      "amount": -1,
+      "character": "11",
+      "created_at": "2026-11-22T20:28:48.689Z",
+      "description": "Sold Silver Star",
+      "field": "ruin",
+      "position": 12
+    },
+    "ledger/4y2k613v0i": {
+      "amount": -2,
+      "character": "11",
+      "created_at": "2026-11-22T20:24:30.606Z",
+      "description": "Sign off talia",
+      "field": "burden",
+      "position": 11
+    },
+    "ledger/5-burden": {
+      "amount": 2,
+      "character": "5",
+      "created_at": "2026-09-05T08:12:34.071Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/5-ruin": {
+      "amount": 3,
+      "character": "5",
+      "created_at": "2026-09-05T08:12:34.071Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/572c5q2r3d": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-15T20:55:37.245Z",
+      "description": "Knifed again",
+      "field": "ruin",
+      "position": 6
+    },
+    "ledger/5c205q1z11": {
+      "amount": 1,
+      "character": "11",
+      "created_at": "2026-11-15T20:53:40.018Z",
+      "description": "Net",
+      "field": "burden",
+      "position": 3
+    },
+    "ledger/5d3y291z5w": {
+      "amount": 3,
+      "character": "8",
+      "created_at": "2026-11-22T20:22:04.346Z",
+      "description": "Aarremyynnit",
+      "field": "coin",
+      "position": 9
+    },
+    "ledger/5o6v0d6v3q": {
+      "amount": 1,
+      "character": "8",
+      "created_at": "2026-11-15T21:03:01.928Z",
+      "description": "Household",
+      "field": "burden",
+      "position": 6
+    },
+    "ledger/5t3t4h1s67": {
+      "amount": 2,
+      "character": "11",
+      "created_at": "2026-11-15T20:59:00.053Z",
+      "description": "Hiring Talia",
+      "field": "burden",
+      "position": 7
+    },
+    "ledger/6-burden": {
+      "amount": 3,
+      "character": "6",
+      "created_at": "2026-09-05T08:13:59.282Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/6-ruin": {
+      "amount": 1,
+      "character": "6",
+      "created_at": "2026-09-05T08:13:59.282Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/624o3s1t2r": {
+      "amount": -1,
+      "character": "8",
+      "created_at": "2026-11-22T20:18:07.212Z",
+      "description": "Household",
+      "field": "ruin",
+      "position": 8
+    },
+    "ledger/7-burden": {
+      "amount": 3,
+      "character": "7",
+      "created_at": "2026-09-05T08:36:39.727Z",
+      "description": "Before the ledger",
+      "field": "burden",
+      "position": 1
+    },
+    "ledger/7-ruin": {
+      "amount": 4,
+      "character": "7",
+      "created_at": "2026-09-05T08:36:39.727Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/8-ruin": {
+      "amount": 2,
+      "character": "8",
+      "created_at": "2026-09-06T15:35:01.231Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
+    "ledger/9-ruin": {
+      "amount": 2,
+      "character": "9",
+      "created_at": "2026-09-06T15:59:59.878Z",
+      "description": "Before the ledger",
+      "field": "ruin",
+      "position": 0
+    },
     "monster/7": {
-      "endurance": 8,
-      "name": "Kulpsis",
+      "created_at": "2026-09-06T17:58:32.318Z",
+      "defences": "",
       "description": "Loping, emaciated humanoids with rows of razor-sharp teeth, claw-like hands and feet, and yellow, feral eyes; grave stench",
+      "endurance": 8,
       "habits": [
         "",
         "",
@@ -906,15 +1179,15 @@
         "",
         ""
       ],
-      "defences": "",
-      "weakness": "",
+      "name": "Kulpsis",
       "position": 0,
-      "created_at": "2026-09-06T17:58:32.318Z"
+      "weakness": ""
     },
     "monster/8": {
-      "endurance": 8,
-      "name": "Tentacrow",
+      "created_at": "2026-09-13T17:16:40.672Z",
+      "defences": "",
       "description": "A lesser demon, roughly 5-feet tall, with the upper body of a toothy, pitch-black corvid, and a lower body of thick, black tentacles.",
+      "endurance": 8,
       "habits": [
         "",
         "",
@@ -923,10 +1196,71 @@
         "",
         ""
       ],
-      "defences": "",
-      "weakness": "",
+      "name": "Tentacrow",
       "position": 1,
-      "created_at": "2026-09-13T17:16:40.672Z"
+      "weakness": ""
+    },
+    "note/2h3d492223": {
+      "created_at": "2026-11-09T14:08:17.776Z",
+      "description": "1. Set of silvery keys made of snowflakes and icicles. Includes a set of lock picks in case a key should be lost (very fragile). 4 Coin\n2. Utility belt lined with glowing syringes in gemstone hues—amethyst, emerald, sapphire, ruby. Their effects are unknown (see Loom). 6 Coin\n3. Resplendent cloak in layers of seafoam green, made of the feathers of an unknown bird. Thick enough to function as armour (bloodbound). 6 Coin\n4. Loose pages of a cookbook. Among the recipes—most of which require rare ingredients or parts from dangerous creatures—are scrawled comments for useful remedies and foraging guides for rare plants. 4 Coin\n5. Manual of unarmed sparring techniques as practiced by followers of Saint Helissen. May be studied to improve one’s skill at defense (counts as a weapon; cannot be lost or exhausted). 4 Coin\n6. Copper pot decorated with motifs of the autumn harvest. Any food cooked in it reminds the taster of their childhood (mellows the mood, heals Conditions). 4 Coin",
+      "position": 0,
+      "title": "Treasures"
+    },
+    "note/2z13674t4r": {
+      "created_at": "2026-11-09T20:55:14.269Z",
+      "description": "- Fragile - add 1 extra light die when the equipment is applicable; if it comes up 1-3, the equipment is broken; can perhaps be restored with Coin\n- Cursed - add 1 extra dark die to a Risk roll; you do not want to get rid of it\n- Bloodbound - takes Ruin in your stead; becomes ruinously alive with 3 Ruin",
+      "position": 1,
+      "title": "Special equipment"
+    },
+    "person/0j333w1p3s": {
+      "created_at": "2026-11-04T21:13:08.066Z",
+      "description": "Delinia Alger is the hard-nosed recruiting agent for the kingsguard. Brash, tough and brutally honest, she holds nothing back when denying one entry into their ranks. She seems to revel in telling treasure-hunters that their inevitable deaths await them in the forest.",
+      "equipment": "Tube of industrial sealant/tar (6 uses), Tactical throwing hatchet, Skis",
+      "location": "Duhrin",
+      "look": "Waxen skin, thick, hulking",
+      "name": "Delinia Alger",
+      "position": 1,
+      "title": "Kingsguard recruiter"
+    },
+    "person/296a6h2q0y": {
+      "created_at": "2026-11-05T19:58:17.106Z",
+      "description": "",
+      "equipment": "Neodymium magnet, tactical ritual knife, spyglass",
+      "location": "Duhrin",
+      "look": "Sunken eyes, perpetually amused, pepper hair",
+      "name": "Lord Ruthelius Paine",
+      "position": 4,
+      "title": "Son of the Governor of Duhrin"
+    },
+    "person/3p0e471i3a": {
+      "created_at": "2026-11-04T21:17:45.211Z",
+      "description": "Orphanage is run by headmistress Jonel. She frequently has the children put on impromptu plays to keep them busy and out of the seedier parts of the fort. Although the scripts are always of a whimsical nature, many attendees say the events on stage echo their own expeditions into the forest.",
+      "equipment": "Field notebook & forensic/invisible inks",
+      "location": "Duhrin Orphanage",
+      "look": "Smell of herbs, fond of thudding something, swallowing",
+      "name": "Headmistress Jonel",
+      "position": 2,
+      "title": "Leader of the League of Objective Thinking (Preservationists)"
+    },
+    "person/5s1p036y3l": {
+      "created_at": "2026-11-05T19:56:26.905Z",
+      "description": "",
+      "equipment": "Heavy-duty field knife, Flamethrower, 2 hammers",
+      "location": "Duhrin",
+      "look": "Dull, hollow eyes, stocky",
+      "name": "Marrow",
+      "position": 3,
+      "title": "Lead thug of the Razers"
+    },
+    "person/6v1t421y08": {
+      "created_at": "2026-11-04T21:10:46.846Z",
+      "description": "Old Meg has been widowed several times, yet lives a comfortable life thanks to generous inheritances and her keen eye for business. She turns a steady profit safeguarding the possessions of those who enter the forest. Her secondhand shop is even more lucrative, selling items left by those who never return.",
+      "equipment": "Tripwire alarm / bell-wire rig, Heavy combat knife, Flute",
+      "location": "Duhrin",
+      "look": "Stooped, curt, shrewd",
+      "name": "Old Meg",
+      "position": 0,
+      "title": "Widow, profiteer, shopkeeper"
     },
     "power/12": {
       "character": "8",
@@ -1011,28 +1345,46 @@
     "roller/main": {
       "mat": [
         {
-          "id": "ed6ee8df",
           "color": "light",
-          "value": 3,
-          "roll": 5
+          "id": "0x0q4r5v41",
+          "roll": 1,
+          "value": 5
         },
         {
-          "id": "e0653575",
+          "color": "dark",
+          "id": "3z0w0x665v",
+          "roll": 1,
+          "value": 6
+        },
+        {
           "color": "light",
-          "value": 3,
-          "roll": 5
+          "id": "3x3l67090z",
+          "roll": 1,
+          "value": 3
         }
       ],
       "sections": [
         {
+          "dice": [
+            {
+              "color": "light",
+              "id": "1z1u633a0d",
+              "roll": 1,
+              "value": 5
+            }
+          ],
           "id": "323bfe81",
-          "name": "Tracksey",
-          "dice": []
+          "name": "Tracksey"
         },
         {
+          "dice": [],
           "id": "efc4131b",
-          "name": "Inda",
-          "dice": []
+          "name": "Inda"
+        },
+        {
+          "dice": [],
+          "id": "5i1p1z6r4h",
+          "name": "Talia"
         }
       ]
     },
@@ -1221,5 +1573,6 @@
       "name": "Coordination",
       "position": 0
     }
-  }
+  },
+  "format": "trophy-docs"
 }
